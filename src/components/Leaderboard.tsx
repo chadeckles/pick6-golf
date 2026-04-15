@@ -3,15 +3,17 @@
 import { useEffect, useState, useCallback } from "react";
 import type { GolferInfo } from "@/lib/types";
 import { FlagIcon } from "@/components/Icons";
+import { useTournament } from "@/components/TournamentProvider";
 
 export default function Leaderboard() {
+  const { tournament } = useTournament();
   const [golfers, setGolfers] = useState<GolferInfo[]>([]);
   const [loading, setLoading] = useState(true);
   const [lastUpdate, setLastUpdate] = useState<Date | null>(null);
 
   const fetchData = useCallback(async () => {
     try {
-      const res = await fetch("/api/leaderboard");
+      const res = await fetch(`/api/leaderboard?tournament=${tournament.slug}`);
       const data = await res.json();
       if (data.golfers) {
         setGolfers(data.golfers);
@@ -22,7 +24,7 @@ export default function Leaderboard() {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [tournament.slug]);
 
   useEffect(() => {
     fetchData();

@@ -1,6 +1,7 @@
 import type { GolferInfo, PickWithScore, PoolEntry } from "./types";
 import { fetchLeaderboard, calculateGolferTotal } from "./espn";
 import { getDb } from "./db";
+import { getTournament } from "./tournaments/config";
 
 interface PickRow {
   golfer_id: string;
@@ -21,7 +22,13 @@ interface UserPicksRow {
  */
 export async function calculateStandings(poolId: string): Promise<PoolEntry[]> {
   const db = getDb();
-  const golfers = await fetchLeaderboard();
+
+  // Look up the tournament for this pool
+  const poolRow = db.prepare("SELECT tournament_slug FROM pools WHERE id = ?").get(poolId) as { tournament_slug: string } | undefined;
+  const tournamentSlug = poolRow?.tournament_slug || "masters";
+  const tournament = getTournament(tournamentSlug);
+
+  const golfers = await fetchLeaderboard(tournamentSlug);
   const golferMap = new Map<string, GolferInfo>();
   golfers.forEach((g) => golferMap.set(g.id, g));
 
@@ -54,7 +61,7 @@ export async function calculateStandings(poolId: string): Promise<PoolEntry[]> {
   for (const [userId, { userName, picks }] of userPicksMap) {
     const picksWithScores: PickWithScore[] = picks.map((pick) => {
       const golfer = golferMap.get(pick.golfer_id);
-      const totalScore = golfer ? calculateGolferTotal(golfer) : null;
+      const totalScore = golfer ? calculateGolferTotal(golfer, tournament.par) : null;
 
       return {
         golferId: pick.golfer_id,

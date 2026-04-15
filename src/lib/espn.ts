@@ -13,7 +13,8 @@ import {
   TIER_3,
   TIER_4,
 } from "./mastersTiers";
-import { AUGUSTA_PAR, CURRENT_YEAR, MASTERS_EVENT_IDS } from "./constants";
+import { CURRENT_YEAR } from "./constants";
+import { getTournament, type TournamentConfig } from "./tournaments/config";
 
 // ─── ESPN API endpoints ─────────────────────────────────────────────────
 // Generic scoreboard: shows the current week's event (changes weekly!)
@@ -27,50 +28,49 @@ const ESPN_LEADERBOARD_URL =
   "https://site.web.api.espn.com/apis/site/v2/sports/golf/leaderboard";
 
 // ─── Caching ────────────────────────────────────────────────────────────
-let cachedData: { golfers: GolferInfo[]; timestamp: number } | null = null;
+// Cache is keyed per tournament slug so switching tournaments doesn't return stale data
+const cacheMap = new Map<string, { golfers: GolferInfo[]; timestamp: number }>();
 const CACHE_TTL = 30_000; // 30 seconds
 
-// Cached Masters event ID for the current year (discovered from ESPN calendar)
-let cachedEventId: string | null = null;
+function getCached(slug: string) {
+  const entry = cacheMap.get(slug);
+  if (entry && Date.now() - entry.timestamp < CACHE_TTL) return entry.golfers;
+  return null;
+}
 
-// ─── Event ID discovery ─────────────────────────────────────────────────
+function setCache(slug: string, golfers: GolferInfo[]) {
+  cacheMap.set(slug, { golfers, timestamp: Date.now() });
+}
+
+// ─── Event ID resolution ────────────────────────────────────────────────
 
 /**
- * Resolve the ESPN event ID for this year's Masters.
- *
- * 1. Check hardcoded lookup table (fastest, no network call).
- * 2. Check runtime cache.
- * 3. Discover dynamically from ESPN's calendar in the scoreboard response.
+ * Resolve the ESPN event ID for a tournament + year.
+ * Uses the tournament config's espnEventIds lookup, then falls back to
+ * dynamic discovery from ESPN's calendar for Masters.
  */
-async function getMastersEventId(): Promise<string | null> {
-  // 1. Hardcoded lookup
-  const known = MASTERS_EVENT_IDS[CURRENT_YEAR];
+async function getEventId(tournament: TournamentConfig): Promise<string | null> {
+  // 1. Tournament config lookup (covers all configured tournaments)
+  const known = tournament.espnEventIds[CURRENT_YEAR];
   if (known) return known;
 
-  // 2. Runtime cache
-  if (cachedEventId) return cachedEventId;
-
-  // 3. Dynamic discovery from ESPN calendar
-  try {
-    const res = await fetch(ESPN_SCOREBOARD_URL, { cache: "no-store" });
-    if (!res.ok) return null;
-
-    const data = await res.json();
-    const calendar: { id: string; label: string }[] =
-      data.leagues?.[0]?.calendar ?? [];
-
-    const mastersEntry = calendar.find(
-      (entry) =>
-        entry.label?.toLowerCase().includes("masters tournament") ||
-        entry.label?.toLowerCase() === "masters"
-    );
-
-    if (mastersEntry) {
-      cachedEventId = mastersEntry.id;
-      return mastersEntry.id;
+  // 2. Dynamic discovery from ESPN calendar (Masters fallback)
+  if (tournament.slug === "masters") {
+    try {
+      const res = await fetch(ESPN_SCOREBOARD_URL, { cache: "no-store" });
+      if (!res.ok) return null;
+      const data = await res.json();
+      const calendar: { id: string; label: string }[] =
+        data.leagues?.[0]?.calendar ?? [];
+      const mastersEntry = calendar.find(
+        (entry) =>
+          entry.label?.toLowerCase().includes("masters tournament") ||
+          entry.label?.toLowerCase() === "masters"
+      );
+      if (mastersEntry) return mastersEntry.id;
+    } catch (err) {
+      console.error("Failed to discover Masters event ID:", err);
     }
-  } catch (err) {
-    console.error("Failed to discover Masters event ID:", err);
   }
 
   return null;
@@ -79,45 +79,53 @@ async function getMastersEventId(): Promise<string | null> {
 // ─── Main entry point ───────────────────────────────────────────────────
 
 /**
- * Fetch live Masters leaderboard data.
+ * Fetch live leaderboard data for a given tournament.
  *
  * Strategy:
  *   1. Use the event-specific leaderboard API (returns all 4 rounds for
- *      the Masters event regardless of what week it is on the PGA Tour).
- *   2. Fall back to the generic scoreboard API and look for a Masters event.
+ *      the event regardless of what week it is on the PGA Tour).
+ *   2. Fall back to the generic scoreboard API (only works during event week).
  *   3. Fall back to a static field list from our tier config (no live scores).
+ *
+ * @param tournamentSlug - e.g. "masters", "pga", "usopen", "theopen"
  */
-export async function fetchLeaderboard(): Promise<GolferInfo[]> {
+export async function fetchLeaderboard(tournamentSlug: string = "masters"): Promise<GolferInfo[]> {
+  const tournament = getTournament(tournamentSlug);
+  const coursePar = tournament.par;
+
   // Return cached data if fresh
-  if (cachedData && Date.now() - cachedData.timestamp < CACHE_TTL) {
-    return cachedData.golfers;
-  }
+  const cached = getCached(tournamentSlug);
+  if (cached) return cached;
 
   try {
     // Strategy 1: Event-specific leaderboard (preferred — works for any event, any time)
-    const eventId = await getMastersEventId();
+    const eventId = await getEventId(tournament);
     if (eventId) {
-      const golfers = await fetchEventLeaderboard(eventId);
+      const golfers = await fetchEventLeaderboard(eventId, coursePar, tournamentSlug);
       if (golfers.length > 0) {
-        cachedData = { golfers, timestamp: Date.now() };
+        setCache(tournamentSlug, golfers);
         return golfers;
       }
     }
 
-    // Strategy 2: Generic scoreboard (only works during Masters week)
-    const golfers = await fetchFromScoreboard();
+    // Strategy 2: Generic scoreboard (only works during event week)
+    const golfers = await fetchFromScoreboard(tournament, coursePar);
     if (golfers.length > 0) {
-      cachedData = { golfers, timestamp: Date.now() };
+      setCache(tournamentSlug, golfers);
       return golfers;
     }
 
-    // Strategy 3: Static field from tier config (no live scores)
-    const staticField = getStaticFieldFromTiers();
-    cachedData = { golfers: staticField, timestamp: Date.now() };
-    return staticField;
+    // Strategy 3: Static field from tier config (no live scores — Masters only for now)
+    if (tournamentSlug === "masters") {
+      const staticField = getStaticFieldFromTiers();
+      setCache(tournamentSlug, staticField);
+      return staticField;
+    }
+
+    return [];
   } catch (err) {
-    console.error("Failed to fetch leaderboard:", err);
-    return cachedData?.golfers ?? getStaticFieldFromTiers();
+    console.error(`Failed to fetch ${tournament.name} leaderboard:`, err);
+    return getCached(tournamentSlug) ?? (tournamentSlug === "masters" ? getStaticFieldFromTiers() : []);
   }
 }
 
@@ -128,7 +136,9 @@ export async function fetchLeaderboard(): Promise<GolferInfo[]> {
  * Returns data for ALL rounds regardless of current PGA Tour schedule week.
  */
 async function fetchEventLeaderboard(
-  eventId: string
+  eventId: string,
+  coursePar: number,
+  tournamentSlug: string,
 ): Promise<GolferInfo[]> {
   try {
     const url = `${ESPN_LEADERBOARD_URL}?event=${eventId}`;
@@ -143,7 +153,7 @@ async function fetchEventLeaderboard(
     const event = data.events?.[0];
     if (!event) return [];
 
-    return parseCompetitors(event);
+    return parseCompetitors(event, coursePar, tournamentSlug);
   } catch (err) {
     console.error("Event leaderboard fetch failed:", err);
     return [];
@@ -153,10 +163,10 @@ async function fetchEventLeaderboard(
 // ─── Strategy 2: Generic scoreboard fallback ────────────────────────────
 
 /**
- * Fallback: Fetch from generic ESPN scoreboard and find the Masters event.
- * Only works during Masters week since the scoreboard shows the current event.
+ * Fallback: Fetch from generic ESPN scoreboard and find the tournament event.
+ * Only works during the tournament's week since the scoreboard shows the current event.
  */
-async function fetchFromScoreboard(): Promise<GolferInfo[]> {
+async function fetchFromScoreboard(tournament: TournamentConfig, coursePar: number): Promise<GolferInfo[]> {
   try {
     const res = await fetch(ESPN_SCOREBOARD_URL, { cache: "no-store" });
     if (!res.ok) {
@@ -166,19 +176,20 @@ async function fetchFromScoreboard(): Promise<GolferInfo[]> {
 
     const data: ESPNLeaderboardResponse = await res.json();
 
-    // Find the Masters event
-    const mastersEvent = data.events?.find(
+    // Find the event by name
+    const searchName = tournament.name.toLowerCase().replace(/^the /, "");
+    const event = data.events?.find(
       (e) =>
-        e.name.toLowerCase().includes("masters") ||
-        e.shortName.toLowerCase().includes("masters")
+        e.name.toLowerCase().includes(searchName) ||
+        e.shortName.toLowerCase().includes(searchName)
     );
 
-    if (!mastersEvent) {
-      console.warn("Masters event not found in scoreboard data");
+    if (!event) {
+      console.warn(`${tournament.name} event not found in scoreboard data`);
       return [];
     }
 
-    return parseCompetitors(mastersEvent);
+    return parseCompetitors(event, coursePar, tournament.slug);
   } catch (err) {
     console.error("Scoreboard fetch failed:", err);
     return [];
@@ -224,11 +235,16 @@ function getStaticFieldFromTiers(): GolferInfo[] {
 // ─── Competitor parsing ─────────────────────────────────────────────────
 
 function parseCompetitors(
-  event: ESPNLeaderboardResponse["events"][0]
+  event: ESPNLeaderboardResponse["events"][0],
+  coursePar: number,
+  tournamentSlug: string,
 ): GolferInfo[] {
   const competitors = event.competitions?.[0]?.competitors ?? [];
   const eventState = event.status?.type?.state ?? "pre";
-  const mastersPlayerIds = getAllMastersPlayerIds();
+
+  // For Masters, filter to known field. For other tournaments, include all competitors.
+  const isMasters = tournamentSlug === "masters";
+  const mastersPlayerIds = isMasters ? getAllMastersPlayerIds() : null;
 
   const golfers: GolferInfo[] = competitors
     .map((c, index) => {
@@ -300,14 +316,18 @@ function parseCompetitors(
         countryFlag: c.athlete?.flag?.href,
       };
     })
-    // ── Filter: only include golfers who are actually in the Masters field ──
-    .filter((g) => mastersPlayerIds.has(g.id));
+    // ── Filter: for Masters, only include golfers in the known field.
+    //    For other tournaments, include all competitors from ESPN.
+    .filter((g) => !mastersPlayerIds || mastersPlayerIds.has(g.id));
 
-  // Assign tiers and OWGR ranks from pre-set config
-  golfers.forEach((g) => {
-    g.rank = getOwgrForGolfer(g.id);
-    g.tier = getTierForGolfer(g.id);
-  });
+  // Assign tiers and OWGR ranks from pre-set config (Masters only for now).
+  // Other tournaments get tier 0 / ESPN-provided rank until we add per-tournament tiers.
+  if (isMasters) {
+    golfers.forEach((g) => {
+      g.rank = getOwgrForGolfer(g.id);
+      g.tier = getTierForGolfer(g.id);
+    });
+  }
 
   // ── Sort ──
   const tournamentStarted =
@@ -352,7 +372,7 @@ function parseCompetitors(
     });
   }
 
-  cachedData = { golfers, timestamp: Date.now() };
+  setCache(tournamentSlug, golfers);
   return golfers;
 }
 
@@ -369,8 +389,8 @@ function parseToPar(displayValue: string | undefined): number | null {
 /**
  * Get golfers organized into tiers for pick selection
  */
-export async function getTieredGolfers(): Promise<TieredGolfers> {
-  const golfers = await fetchLeaderboard();
+export async function getTieredGolfers(tournamentSlug: string = "masters"): Promise<TieredGolfers> {
+  const golfers = await fetchLeaderboard(tournamentSlug);
   return {
     tier1: golfers.filter((g) => g.tier === 1),
     tier2: golfers.filter((g) => g.tier === 2),
@@ -383,9 +403,10 @@ export async function getTieredGolfers(): Promise<TieredGolfers> {
  * Get a single golfer's current score info
  */
 export async function getGolferScore(
-  golferId: string
+  golferId: string,
+  tournamentSlug: string = "masters",
 ): Promise<GolferInfo | null> {
-  const golfers = await fetchLeaderboard();
+  const golfers = await fetchLeaderboard(tournamentSlug);
   return golfers.find((g) => g.id === golferId) ?? null;
 }
 
@@ -398,12 +419,11 @@ export async function getGolferScore(
  * For cut/WD/DNS players:
  *   → Uses cumulative `toPar` for played rounds (from ESPN `score.displayValue`).
  *   → Adds a per-round penalty for each missed round.
- *   → Penalty per missed round = CUT_PENALTY_PER_ROUND (80) − AUGUSTA_PAR (72) = +8 to-par.
+ *   → Penalty per missed round = CUT_PENALTY_PER_ROUND (80) − coursePar.
  *
- * Example: Player shot 76 (+4), 74 (+2), then CUT.
- *   toPar = +6 (from ESPN), missed 2 rounds → +6 + 2×8 = +22 total.
+ * @param coursePar - par for the tournament's course (e.g. 72 for Augusta, 71 for Quail Hollow)
  */
-export function calculateGolferTotal(golfer: GolferInfo): number {
+export function calculateGolferTotal(golfer: GolferInfo, coursePar: number = 72): number {
   if (
     golfer.status === "cut" ||
     golfer.status === "wd" ||
@@ -421,7 +441,7 @@ export function calculateGolferTotal(golfer: GolferInfo): number {
         (r): r is number => r !== null && r > 0
       );
       playedToPar = playedRounds.reduce(
-        (sum, r) => sum + (r - AUGUSTA_PAR),
+        (sum, r) => sum + (r - coursePar),
         0
       );
     }
@@ -432,8 +452,8 @@ export function calculateGolferTotal(golfer: GolferInfo): number {
     ).length;
     const missedRounds = 4 - playedCount;
 
-    // Penalty in to-par terms: CUT_PENALTY_PER_ROUND (80 strokes) → 80 − 72 = +8 per missed round
-    const penaltyPerRound = CUT_PENALTY_PER_ROUND - AUGUSTA_PAR;
+    // Penalty in to-par terms: CUT_PENALTY_PER_ROUND (80 strokes) − coursePar
+    const penaltyPerRound = CUT_PENALTY_PER_ROUND - coursePar;
     return playedToPar + missedRounds * penaltyPerRound;
   }
 
@@ -445,5 +465,5 @@ export function calculateGolferTotal(golfer: GolferInfo): number {
     (r): r is number => r !== null && r > 0
   );
   if (playedRounds.length === 0) return 0;
-  return playedRounds.reduce((sum, r) => sum + (r - AUGUSTA_PAR), 0);
+  return playedRounds.reduce((sum, r) => sum + (r - coursePar), 0);
 }

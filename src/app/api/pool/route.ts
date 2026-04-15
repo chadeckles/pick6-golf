@@ -3,6 +3,7 @@ import { getDb } from "@/lib/db";
 import { getSession } from "@/lib/auth";
 import { v4 as uuid } from "uuid";
 import { MASTERS_INFO } from "@/lib/constants";
+import { getTournament } from "@/lib/tournaments/config";
 
 // Create a new pool
 export async function POST(req: NextRequest) {
@@ -12,7 +13,7 @@ export async function POST(req: NextRequest) {
   }
 
   try {
-    const { name, lockDate } = await req.json();
+    const { name, lockDate, tournament: tournamentSlug } = await req.json();
 
     if (!name) {
       return NextResponse.json(
@@ -26,12 +27,13 @@ export async function POST(req: NextRequest) {
     // Generate a short invite code
     const inviteCode = uuid().slice(0, 8).toUpperCase();
 
-    // Default lock date: Thursday of Masters week (first round start)
+    // Use tournament-specific lock date or provided lock date
+    const slug = tournamentSlug || "masters";
     const lock = lockDate || MASTERS_INFO.lockDateISO;
 
     db.prepare(
-      "INSERT INTO pools (id, name, invite_code, admin_user_id, lock_date) VALUES (?, ?, ?, ?, ?)"
-    ).run(id, name, inviteCode, session.userId, lock);
+      "INSERT INTO pools (id, name, invite_code, admin_user_id, lock_date, tournament_slug) VALUES (?, ?, ?, ?, ?, ?)"
+    ).run(id, name, inviteCode, session.userId, lock, slug);
 
     // Auto-join the creator
     db.prepare("UPDATE users SET pool_id = ? WHERE id = ?").run(
@@ -77,6 +79,7 @@ export async function GET() {
     payment_link: string | null;
     payment_label: string | null;
     entry_fee: string | null;
+    tournament_slug: string | null;
   }
   const pool = db
     .prepare("SELECT * FROM pools WHERE id = ?")
@@ -111,6 +114,7 @@ export async function GET() {
           paymentLink: pool.payment_link || null,
           paymentLabel: pool.payment_label || "Pay Entry Fee",
           entryFee: pool.entry_fee || null,
+          tournamentSlug: pool.tournament_slug || "masters",
           members: members.map((m) => ({
             id: m.id,
             name: m.name,

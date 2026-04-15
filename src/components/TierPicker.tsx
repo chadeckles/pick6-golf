@@ -42,7 +42,7 @@ export default function TierPicker() {
   const fetchData = useCallback(async () => {
     try {
       const [tierRes, picksRes] = await Promise.all([
-        fetch("/api/leaderboard?tiered=true"),
+        fetch(`/api/leaderboard?tiered=true&tournament=${tournament.slug}`),
         fetch("/api/picks"),
       ]);
       const tierData = await tierRes.json();
@@ -65,7 +65,7 @@ export default function TierPicker() {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [tournament.slug]);
 
   useEffect(() => {
     fetchData();

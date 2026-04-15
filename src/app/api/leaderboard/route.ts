@@ -7,14 +7,15 @@ export const revalidate = 0;
 export async function GET(req: Request) {
   const { searchParams } = new URL(req.url);
   const tiered = searchParams.get("tiered");
+  const tournament = searchParams.get("tournament") || "masters";
 
   try {
     if (tiered === "true") {
-      const tiers = await getTieredGolfers();
+      const tiers = await getTieredGolfers(tournament);
       return NextResponse.json({ tiers });
     }
 
-    const golfers = await fetchLeaderboard();
+    const golfers = await fetchLeaderboard(tournament);
     return NextResponse.json({ golfers });
   } catch (err) {
     console.error("Leaderboard error:", err);

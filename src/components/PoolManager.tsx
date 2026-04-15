@@ -29,7 +29,7 @@ export default function PoolManager({ onPoolReady }: PoolManagerProps) {
       const res = await fetch("/api/pool", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name: poolName }),
+        body: JSON.stringify({ name: poolName, tournament: tournament.slug }),
       });
       const data = await res.json();
       if (!res.ok) {

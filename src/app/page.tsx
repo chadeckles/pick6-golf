@@ -77,7 +77,7 @@ export default function Home() {
           Pick Six Golf runs pools for every major championship. Select a tournament to get started.
         </p>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 stagger-children">
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 stagger-children">
           {allTournaments.map((t) => {
             const isActive = t.slug === tournament.slug;
             const dates = t.dates[CURRENT_YEAR];
@@ -85,6 +85,16 @@ export default function Home() {
             const dateStr = dates
               ? `${monthNames[dates.month]} ${dates.start}–${dates.end}, ${CURRENT_YEAR}`
               : `${CURRENT_YEAR}`;
+
+            // Distinct card header colors so the tiles aren't all blue
+            const cardColors: Record<string, string> = {
+              masters: t.theme.primary,
+              pga: t.theme.accent,        // gold
+              usopen: t.theme.accent,      // red
+              theopen: t.theme.primary,
+              rydercup: t.theme.primary,
+            };
+            const headerColor = cardColors[t.slug] ?? t.theme.primary;
 
             return (
               <button
@@ -99,11 +109,14 @@ export default function Home() {
                 }}
               >
                 <div
-                  className="px-5 py-4 text-white"
-                  style={{ backgroundColor: t.theme.primary }}
+                  className="px-5 py-4"
+                  style={{
+                    backgroundColor: headerColor,
+                    color: t.slug === "pga" ? t.theme.primaryDark : "#ffffff",
+                  }}
                 >
                   <h3 className="font-bold text-lg">{t.name}</h3>
-                  <p className="text-white/70 text-sm">{dateStr}</p>
+                  <p className="text-sm" style={{ opacity: 0.7 }}>{dateStr}</p>
                 </div>
                 <div className="bg-white p-4">
                   <p className="text-sm text-gray-600 mb-2">{t.description}</p>
@@ -178,7 +191,7 @@ export default function Home() {
       </section>
 
       {/* Tier Breakdown */}
-      <section className="py-16">
+      <section className="pt-16 pb-8">
         <div className="max-w-5xl mx-auto px-4">
           <h2 className="text-3xl font-bold text-center text-gray-900 mb-4">
             Tier System
@@ -226,7 +239,7 @@ export default function Home() {
       </section>
 
       {/* Scoring Rules */}
-      <section className="max-w-5xl mx-auto px-4 py-16">
+      <section className="max-w-5xl mx-auto px-4 pt-8 pb-16">
         <div className="bg-masters-cream rounded-2xl p-8 sm:p-12">
           <h2 className="text-2xl font-bold text-gray-900 mb-6 flex items-center gap-3">
             <ClipboardIcon className="w-6 h-6 text-masters-green" /> Scoring Rules

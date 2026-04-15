@@ -87,4 +87,8 @@ function initSchema(db: Database.Database) {
   if (!poolColNames.has("entry_fee")) {
     db.exec("ALTER TABLE pools ADD COLUMN entry_fee TEXT");
   }
+  // Migrate: add tournament_slug to pools (defaults to 'masters' for existing pools)
+  if (!poolColNames.has("tournament_slug")) {
+    db.exec("ALTER TABLE pools ADD COLUMN tournament_slug TEXT DEFAULT 'masters'");
+  }
 }

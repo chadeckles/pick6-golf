@@ -13,6 +13,7 @@ import {
   CopyIcon,
   CheckIcon,
 } from "@/components/Icons";
+import { useTournament } from "@/components/TournamentProvider";
 
 interface PoolInfo {
   id: string;
@@ -23,6 +24,7 @@ interface PoolInfo {
   paymentLink: string | null;
   paymentLabel: string;
   entryFee: string | null;
+  tournamentSlug: string;
   members: { id: string; name: string; email: string; paid: boolean }[];
 }
 
@@ -35,6 +37,7 @@ interface UserPick {
 
 export default function DashboardPage() {
   const router = useRouter();
+  const { tournament, setTournament } = useTournament();
   const [user, setUser] = useState<{ userId: string; name: string } | null>(null);
   const [pool, setPool] = useState<PoolInfo | null>(null);
   const [picks, setPicks] = useState<UserPick[]>([]);
@@ -68,6 +71,10 @@ export default function DashboardPage() {
         setPaymentLink(poolData.pool.paymentLink || "");
         setPaymentLabel(poolData.pool.paymentLabel || "Pay Entry Fee");
         setEntryFee(poolData.pool.entryFee || "");
+        // Auto-switch tournament context to match the pool's tournament
+        if (poolData.pool.tournamentSlug) {
+          setTournament(poolData.pool.tournamentSlug);
+        }
         // Format lock date for datetime-local input
         const ld = new Date(poolData.pool.lockDate);
         setLockDateInput(ld.toISOString().slice(0, 16));
