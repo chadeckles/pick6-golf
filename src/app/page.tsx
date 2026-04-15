@@ -3,6 +3,15 @@
 import Link from "next/link";
 import MastersLogo from "@/components/MastersLogo";
 import { CURRENT_YEAR } from "@/lib/constants";
+import {
+  UserIcon,
+  TargetIcon,
+  ChartIcon,
+  TrophyIcon,
+  FlagIcon,
+  ClipboardIcon,
+  GolferIcon,
+} from "@/components/Icons";
 
 export default function Home() {
   return (
@@ -33,15 +42,15 @@ export default function Home() {
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <Link
               href="/register"
-              className="bg-masters-yellow text-masters-green-dark px-8 py-4 rounded-xl text-lg font-bold hover:bg-yellow-300 transition-all shadow-lg hover:shadow-xl active:scale-[0.98]"
+              className="inline-flex items-center gap-2 bg-masters-yellow text-masters-green-dark px-8 py-4 rounded-xl text-lg font-bold hover:bg-yellow-300 transition-all shadow-lg hover:shadow-xl active:scale-[0.98]"
             >
-              🏌️ Join the Pool
+              <GolferIcon className="w-5 h-5" /> Join the Pool
             </Link>
             <Link
               href="/leaderboard"
-              className="bg-white/10 backdrop-blur-sm text-white border border-white/30 px-8 py-4 rounded-xl text-lg font-bold hover:bg-white/20 transition-all"
+              className="inline-flex items-center gap-2 bg-white/10 backdrop-blur-sm text-white border border-white/30 px-8 py-4 rounded-xl text-lg font-bold hover:bg-white/20 transition-all"
             >
-              ⛳ View Leaderboard
+              <FlagIcon className="w-5 h-5" /> View Leaderboard
             </Link>
           </div>
         </div>
@@ -59,33 +68,33 @@ export default function Home() {
               step: "1",
               title: "Register",
               desc: "Create your account and join or create a pool with friends.",
-              icon: "👤",
+              icon: <UserIcon className="w-7 h-7 text-masters-green" />,
             },
             {
               step: "2",
               title: "Pick Your 6",
               desc: "Draft one golfer per tier — see the tier breakdown below.",
-              icon: "🎯",
+              icon: <TargetIcon className="w-7 h-7 text-masters-green" />,
             },
             {
               step: "3",
               title: "Watch & Track",
               desc: "Follow live scoring on the dashboard as the Masters unfolds.",
-              icon: "📊",
+              icon: <ChartIcon className="w-7 h-7 text-masters-green" />,
             },
             {
               step: "4",
               title: "Win!",
               desc: "Lowest combined to-par score from your best 5 of 6 picks wins.",
-              icon: "🏆",
+              icon: <TrophyIcon className="w-7 h-7 text-masters-green" />,
             },
-          ].map((item) => (
+          ].map((item, idx) => (
             <div
               key={item.step}
               className="text-center bg-white rounded-xl shadow-md p-6 hover:shadow-lg transition-shadow"
             >
               <div className="w-14 h-14 bg-masters-cream rounded-full flex items-center justify-center mx-auto mb-4">
-                <span className="text-2xl">{item.icon}</span>
+                {item.icon}
               </div>
               <div className="inline-flex items-center justify-center w-7 h-7 bg-masters-green text-white rounded-full text-sm font-bold mb-3">
                 {item.step}
@@ -173,8 +182,8 @@ export default function Home() {
       {/* Scoring Rules */}
       <section className="max-w-5xl mx-auto px-4 py-16">
         <div className="bg-masters-cream rounded-2xl p-8 sm:p-12">
-          <h2 className="text-2xl font-bold text-gray-900 mb-6">
-            📋 Scoring Rules
+          <h2 className="text-2xl font-bold text-gray-900 mb-6 flex items-center gap-3">
+            <ClipboardIcon className="w-6 h-6 text-masters-green" /> Scoring Rules
           </h2>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div>

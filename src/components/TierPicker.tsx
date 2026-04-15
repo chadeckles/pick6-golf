@@ -3,6 +3,7 @@
 import { useEffect, useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import type { GolferInfo, TieredGolfers } from "@/lib/types";
+import { CheckIcon, GolferIcon } from "@/components/Icons";
 
 interface PickSelection {
   golferId: string;
@@ -127,7 +128,7 @@ export default function TierPicker() {
         return;
       }
 
-      setSuccess("Picks saved successfully! 🎉");
+      setSuccess("Picks saved successfully!");
       setExistingPicks(selections);
       setTimeout(() => router.push("/dashboard"), 1500);
     } catch {
@@ -185,8 +186,8 @@ export default function TierPicker() {
             Picks: {totalPicks} / 6
           </span>
           {isComplete && (
-            <span className="text-sm font-medium text-green-600">
-              ✓ All picks made
+            <span className="text-sm font-medium text-green-600 flex items-center gap-1">
+              <CheckIcon className="w-4 h-4" /> All picks made
             </span>
           )}
         </div>
@@ -336,9 +337,9 @@ export default function TierPicker() {
           {saving
             ? "Saving..."
             : !hasChanges && existingPicks.length > 0
-              ? "✓ Picks Saved"
+              ? "Picks Saved"
               : isComplete
-                ? "🏌️ Lock In My Picks"
+                ? "Lock In My Picks"
                 : `Select ${6 - totalPicks} more player${6 - totalPicks !== 1 ? "s" : ""}`}
         </button>
       </div>

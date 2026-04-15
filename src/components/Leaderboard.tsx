@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useCallback } from "react";
 import type { GolferInfo } from "@/lib/types";
+import { FlagIcon } from "@/components/Icons";
 
 export default function Leaderboard() {
   const [golfers, setGolfers] = useState<GolferInfo[]>([]);
@@ -44,7 +45,9 @@ export default function Leaderboard() {
     <div className="bg-white rounded-xl shadow-md overflow-hidden">
       {/* Header */}
       <div className="bg-masters-green green-pattern px-6 py-4 flex items-center justify-between">
-        <h2 className="text-white font-bold text-lg">⛳ Masters Leaderboard</h2>
+        <h2 className="text-white font-bold text-lg flex items-center gap-2">
+          <FlagIcon className="w-5 h-5" /> Masters Leaderboard
+        </h2>
         <div className="flex items-center gap-3">
           {lastUpdate && (
             <span className="text-masters-yellow text-xs">

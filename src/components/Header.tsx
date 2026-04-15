@@ -5,6 +5,7 @@ import { useRouter, usePathname } from "next/navigation";
 import { useEffect, useState, useCallback } from "react";
 import MastersLogo from "@/components/MastersLogo";
 import { CURRENT_YEAR } from "@/lib/constants";
+import { ChartIcon, TargetIcon, FlagIcon } from "@/components/Icons";
 
 interface User {
   userId: string;
@@ -135,16 +136,16 @@ export default function Header() {
                         <Link
                           href="/dashboard"
                           onClick={() => setMenuOpen(false)}
-                          className="block px-4 py-2 text-sm text-gray-700 hover:bg-masters-cream transition-colors"
+                          className="flex items-center gap-2 px-4 py-2 text-sm text-gray-700 hover:bg-masters-cream transition-colors"
                         >
-                          📊 Dashboard
+                          <ChartIcon className="w-4 h-4" /> Dashboard
                         </Link>
                         <Link
                           href="/picks"
                           onClick={() => setMenuOpen(false)}
-                          className="block px-4 py-2 text-sm text-gray-700 hover:bg-masters-cream transition-colors"
+                          className="flex items-center gap-2 px-4 py-2 text-sm text-gray-700 hover:bg-masters-cream transition-colors"
                         >
-                          🎯 My Picks
+                          <TargetIcon className="w-4 h-4" /> My Picks
                         </Link>
                         <button
                           onClick={handleLogout}
@@ -196,23 +197,23 @@ export default function Header() {
           <div className="sm:hidden border-t border-white/10 py-3 space-y-1">
             <Link
               href="/leaderboard"
-              className="block px-4 py-2 text-sm text-white/80 hover:text-white hover:bg-white/10 rounded-lg"
+              className="flex items-center gap-2 px-4 py-2 text-sm text-white/80 hover:text-white hover:bg-white/10 rounded-lg"
             >
-              ⛳ Leaderboard
+              <FlagIcon className="w-4 h-4" /> Leaderboard
             </Link>
             {user ? (
               <>
                 <Link
                   href="/dashboard"
-                  className="block px-4 py-2 text-sm text-white/80 hover:text-white hover:bg-white/10 rounded-lg"
+                  className="flex items-center gap-2 px-4 py-2 text-sm text-white/80 hover:text-white hover:bg-white/10 rounded-lg"
                 >
-                  📊 Dashboard
+                  <ChartIcon className="w-4 h-4" /> Dashboard
                 </Link>
                 <Link
                   href="/picks"
-                  className="block px-4 py-2 text-sm text-white/80 hover:text-white hover:bg-white/10 rounded-lg"
+                  className="flex items-center gap-2 px-4 py-2 text-sm text-white/80 hover:text-white hover:bg-white/10 rounded-lg"
                 >
-                  🎯 My Picks
+                  <TargetIcon className="w-4 h-4" /> My Picks
                 </Link>
                 <button
                   onClick={handleLogout}

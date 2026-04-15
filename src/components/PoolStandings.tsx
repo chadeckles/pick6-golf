@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useCallback, Fragment } from "react";
 import type { PoolEntry } from "@/lib/types";
+import { TrophyIcon } from "@/components/Icons";
 
 export default function PoolStandings() {
   const [standings, setStandings] = useState<PoolEntry[]>([]);
@@ -56,7 +57,9 @@ export default function PoolStandings() {
     <div className="bg-white rounded-xl shadow-md overflow-hidden">
       {/* Header */}
       <div className="bg-masters-green green-pattern px-6 py-4 flex items-center justify-between">
-        <h2 className="text-white font-bold text-lg">🏆 Pool Standings</h2>
+        <h2 className="text-white font-bold text-lg flex items-center gap-2">
+          <TrophyIcon className="w-5 h-5" /> Pool Standings
+        </h2>
         {lastUpdate && (
           <span className="text-masters-yellow text-xs">
             Updated {lastUpdate.toLocaleTimeString()}

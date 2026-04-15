@@ -5,6 +5,14 @@ import { useRouter } from "next/navigation";
 import PoolStandings from "@/components/PoolStandings";
 import PoolManager from "@/components/PoolManager";
 import Link from "next/link";
+import {
+  LockIcon,
+  UnlockIcon,
+  DollarIcon,
+  GearIcon,
+  CopyIcon,
+  CheckIcon,
+} from "@/components/Icons";
 
 interface PoolInfo {
   id: string;
@@ -142,7 +150,7 @@ export default function DashboardPage() {
         <div className="flex items-center justify-between flex-wrap gap-4">
           <div>
             <h1 className="text-2xl font-bold text-gray-900">
-              Welcome, {user.name}! 👋
+              Welcome, {user.name}!
             </h1>
             <p className="text-gray-500 mt-1">
               {pool
@@ -200,7 +208,7 @@ export default function DashboardPage() {
                       }}
                       className="text-gray-400 hover:text-gray-600 text-sm"
                     >
-                      {copied ? "✓ Copied!" : "📋"}
+                      {copied ? <CheckIcon className="w-4 h-4 text-green-600" /> : <CopyIcon className="w-4 h-4" />}
                     </button>
                   </div>
                 </div>
@@ -268,7 +276,7 @@ export default function DashboardPage() {
                       rel="noopener noreferrer"
                       className="block w-full text-center bg-masters-green text-white px-4 py-2.5 rounded-lg font-bold text-sm hover:bg-masters-green-dark transition-colors"
                     >
-                      💰 {pool.paymentLabel}
+                      <DollarIcon className="w-4 h-4 inline-block mr-1" /> {pool.paymentLabel}
                     </a>
                   </div>
                 )}
@@ -279,9 +287,9 @@ export default function DashboardPage() {
                     {!showPaymentSetup ? (
                       <button
                         onClick={() => setShowPaymentSetup(true)}
-                        className="text-sm text-masters-green font-bold hover:underline"
+                        className="text-sm text-masters-green font-bold hover:underline flex items-center gap-1"
                       >
-                        ⚙️ {pool.paymentLink ? "Edit Payment Settings" : "Set Up Payment Link"}
+                        <GearIcon className="w-4 h-4" /> {pool.paymentLink ? "Edit Payment Settings" : "Set Up Payment Link"}
                       </button>
                     ) : (
                       <div className="space-y-3">
@@ -343,8 +351,8 @@ export default function DashboardPage() {
                   <span className="text-xs text-gray-500 uppercase font-bold tracking-wider">
                     Status
                   </span>
-                  <p className={`text-sm font-medium mt-1 ${isLocked ? "text-red-600" : "text-green-600"}`}>
-                    {isLocked ? "🔒 Picks Locked" : "🟢 Picks Open"}
+                  <p className={`text-sm font-medium mt-1 flex items-center gap-1.5 ${isLocked ? "text-red-600" : "text-green-600"}`}>
+                    {isLocked ? <><LockIcon className="w-4 h-4" /> Picks Locked</> : <><UnlockIcon className="w-4 h-4" /> Picks Open</>}
                   </p>
                   <div className="mt-1 flex items-center gap-2">
                     {!editingLockDate ? (
