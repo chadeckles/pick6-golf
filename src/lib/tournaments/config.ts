@@ -74,7 +74,7 @@ export const TOURNAMENTS: Record<string, TournamentConfig> = {
     tagline: "A Tradition Unlike Any Other",
     course: "Augusta National Golf Club",
     par: 72,
-    logo: "/masterspicksixlogo.png",
+    logo: "/logos/masters.png",
     espnEventIds: {
       2025: "401580344",
       2026: "401811941",
@@ -242,7 +242,7 @@ export const TOURNAMENTS: Record<string, TournamentConfig> = {
       3: { name: "Debutants", range: "26-50", desc: "Hungry to prove themselves on the big stage." },
       4: { name: "Captain's Picks", range: "51+", desc: "The wild cards that can change everything." },
     },
-    active: true,
+    active: false,
     description: "USA vs Europe. Pick your 6 for the greatest team event in golf.",
     disclaimer: "Not affiliated with Ryder Cup Europe or PGA of America",
   },
