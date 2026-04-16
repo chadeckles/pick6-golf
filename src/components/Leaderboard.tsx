@@ -34,7 +34,7 @@ export default function Leaderboard() {
 
   if (loading) {
     return (
-      <div className="bg-white rounded-xl shadow-md p-8 animate-pulse">
+      <div className="card p-8 animate-pulse">
         <div className="h-6 bg-gray-200 rounded w-48 mb-4" />
         {[1, 2, 3, 4, 5].map((i) => (
           <div key={i} className="h-12 bg-gray-100 rounded mb-2" />
@@ -44,9 +44,9 @@ export default function Leaderboard() {
   }
 
   return (
-    <div className="bg-white rounded-xl shadow-md overflow-hidden">
+    <div className="card">
       {/* Header */}
-      <div className="bg-t-primary hero-pattern px-6 py-4 flex items-center justify-between">
+      <div className="card-header flex items-center justify-between">
         <h2 className="text-white font-bold text-lg flex items-center gap-2">
           <FlagIcon className="w-5 h-5" /> Leaderboard
         </h2>
@@ -64,34 +64,20 @@ export default function Leaderboard() {
       <div className="overflow-x-auto">
         <table className="w-full">
           <thead>
-            <tr className="bg-t-cream border-b border-t-primary/10">
-              <th className="px-3 py-2 text-left text-xs font-bold text-t-primary uppercase tracking-wider w-16">
+            <tr className="table-header">
+              <th className="w-16">
                 Pos
               </th>
-              <th className="px-3 py-2 text-left text-xs font-bold text-t-primary uppercase tracking-wider">
+              <th>
                 Player
               </th>
-              <th className="px-3 py-2 text-center text-xs font-bold text-t-primary uppercase tracking-wider w-20">
-                To Par
-              </th>
-              <th className="px-3 py-2 text-center text-xs font-bold text-t-primary uppercase tracking-wider w-16">
-                Thru
-              </th>
-              <th className="px-3 py-2 text-center text-xs font-bold text-t-primary uppercase tracking-wider w-12">
-                R1
-              </th>
-              <th className="px-3 py-2 text-center text-xs font-bold text-t-primary uppercase tracking-wider w-12">
-                R2
-              </th>
-              <th className="px-3 py-2 text-center text-xs font-bold text-t-primary uppercase tracking-wider w-12">
-                R3
-              </th>
-              <th className="px-3 py-2 text-center text-xs font-bold text-t-primary uppercase tracking-wider w-12">
-                R4
-              </th>
-              <th className="px-3 py-2 text-center text-xs font-bold text-t-primary uppercase tracking-wider w-16">
-                Tier
-              </th>
+              <th className="text-center w-20">To Par</th>
+              <th className="text-center w-16">Thru</th>
+              <th className="text-center w-12">R1</th>
+              <th className="text-center w-12">R2</th>
+              <th className="text-center w-12">R3</th>
+              <th className="text-center w-12">R4</th>
+              <th className="text-center w-16">Tier</th>
             </tr>
           </thead>
           <tbody>

@@ -11,7 +11,6 @@ import {
   type TournamentConfig,
   getTournament,
   getDefaultTournament,
-  getThemeCSSVars,
 } from "@/lib/tournaments/config";
 
 interface TournamentContextValue {
@@ -36,15 +35,6 @@ export function TournamentProvider({ children }: { children: ReactNode }) {
       setTournamentState(t);
     }
   }, []);
-
-  // Apply theme CSS vars to <html> whenever tournament changes
-  useEffect(() => {
-    const vars = getThemeCSSVars(tournament.theme);
-    const root = document.documentElement;
-    for (const [key, value] of Object.entries(vars)) {
-      root.style.setProperty(key, value);
-    }
-  }, [tournament]);
 
   function setTournament(slug: string) {
     const t = getTournament(slug);

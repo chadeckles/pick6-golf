@@ -74,7 +74,7 @@ const TOURNAMENT_BASES: Record<string, TournamentBase> = {
     tagline: "A Tradition Unlike Any Other",
     course: "Augusta National Golf Club",
     par: 72,
-    logo: "/logos/masters.png",
+    logo: "/logos/pick-six-golf.png",
     theme: {
       primary: "#006747",
       primaryDark: "#004d35",
@@ -102,7 +102,7 @@ const TOURNAMENT_BASES: Record<string, TournamentBase> = {
     tagline: "Glory's Last Shot",
     course: "Quail Hollow Club",
     par: 71,
-    logo: "/logos/pga.png",
+    logo: "/logos/pick-six-golf.png",
     theme: {
       primary: "#00205B",
       primaryDark: "#001740",
@@ -130,7 +130,7 @@ const TOURNAMENT_BASES: Record<string, TournamentBase> = {
     tagline: "The Toughest Test in Golf",
     course: "Shinnecock Hills Golf Club",
     par: 70,
-    logo: "/logos/usopen.png",
+    logo: "/logos/pick-six-golf.png",
     theme: {
       primary: "#002855",
       primaryDark: "#001B3A",
@@ -158,7 +158,7 @@ const TOURNAMENT_BASES: Record<string, TournamentBase> = {
     tagline: "The Original Championship",
     course: "Royal Portrush Golf Club",
     par: 71,
-    logo: "/logos/theopen.png",
+    logo: "/logos/pick-six-golf.png",
     theme: {
       primary: "#1B2A4A",
       primaryDark: "#111D33",

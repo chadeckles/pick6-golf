@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import TournamentLogo from "@/components/TournamentLogo";
+import Image from "next/image";
 import { CURRENT_YEAR } from "@/lib/constants";
 import {
   UserIcon,
@@ -29,22 +29,24 @@ export default function Home() {
   return (
     <div>
       {/* Hero Section */}
-      <section className="relative bg-t-primary hero-pattern overflow-hidden">
+      <section className="relative hero-gradient overflow-hidden">
         <div className="relative max-w-5xl mx-auto px-4 py-20 sm:py-28 text-center">
-          <div className="inline-flex items-center gap-2 bg-white/10 backdrop-blur-sm px-4 py-2 rounded-full mb-6">
-            <div className="w-2 h-2 bg-t-accent rounded-full animate-pulse" />
-            <span className="text-t-accent text-sm font-medium">
-              {tournament.fullName} — {CURRENT_YEAR}
-            </span>
-          </div>
-
-          <TournamentLogo width={260} height={220} className="mx-auto mb-4 drop-shadow-lg" />
+          <Image
+            src="/logos/pick-six-golf.png"
+            alt="Pick Six Golf"
+            width={220}
+            height={186}
+            className="mx-auto mb-4 drop-shadow-lg"
+            priority
+            style={{ width: "auto", height: "auto" }}
+            onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }}
+          />
 
           <h1 className="text-4xl sm:text-6xl font-bold text-white mb-4 tracking-tight">
             Pick Six Golf
           </h1>
           <p className="text-xl sm:text-2xl text-t-accent font-medium mb-2">
-            {tournament.tagline}
+            Your Major Championship Pool
           </p>
           <p className="text-white/80 text-lg max-w-2xl mx-auto mb-10">
             Pick 6 golfers across 4 tiers. Best 5 of 6 combined to-par scores
@@ -288,7 +290,7 @@ export default function Home() {
       </section>
 
       {/* CTA */}
-      <section className="bg-t-primary hero-pattern py-16">
+      <section className="hero-gradient py-16">
         <div className="max-w-3xl mx-auto px-4 text-center">
           <h2 className="text-3xl font-bold text-white mb-4">
             Ready to Play?

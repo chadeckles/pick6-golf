@@ -1,24 +1,28 @@
 @import "tailwindcss";
 
 :root {
-  /* ─── Tournament theme (swapped dynamically via TournamentProvider) ─── */
+  /* ─── Pick Six Golf — Locked Brand Palette ─── */
   --t-primary: #006747;
   --t-primary-dark: #004d35;
   --t-primary-light: #008c5f;
   --t-accent: #f2c75c;
   --t-accent-muted: #c8a951;
-  --t-cream: #fdf8f0;
+  --t-cream: #faf7f2;
   --t-highlight: #d23669;
   --t-sky: #e8f4f8;
 
   --foreground: #1a1a1a;
-  --background: var(--t-cream);
+  --background: #f8f6f1;
   --card-bg: #ffffff;
   --border: #e5e0d5;
+
+  /* Premium shadow tokens */
+  --shadow-card: 0 1px 3px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.04);
+  --shadow-card-hover: 0 10px 30px -8px rgba(0,0,0,0.12), 0 4px 12px -4px rgba(0,0,0,0.06);
+  --shadow-elevated: 0 20px 40px -12px rgba(0,0,0,0.15);
 }
 
 @theme inline {
-  /* Semantic tournament colors — resolved from CSS vars at runtime */
   --color-t-primary: var(--t-primary);
   --color-t-primary-dark: var(--t-primary-dark);
   --color-t-primary-light: var(--t-primary-light);
@@ -42,6 +46,8 @@ body {
   background: var(--background);
   color: var(--foreground);
   font-family: var(--font-geist-sans), system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
 /* Selection color */
@@ -58,44 +64,76 @@ body {
 }
 
 /* Scrollbar styling */
-::-webkit-scrollbar {
-  width: 8px;
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--t-primary); border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: var(--t-primary-dark); }
+
+/* ─── Premium card system ─── */
+.card {
+  background: white;
+  border-radius: 0.75rem;
+  box-shadow: var(--shadow-card);
+  border: 1px solid rgba(0,0,0,0.04);
+  overflow: hidden;
+  transition: box-shadow 0.2s ease, transform 0.2s ease;
 }
-::-webkit-scrollbar-track {
-  background: var(--t-cream);
+.card:hover {
+  box-shadow: var(--shadow-card-hover);
 }
-::-webkit-scrollbar-thumb {
-  background: var(--t-primary);
-  border-radius: 4px;
+.card-header {
+  background: linear-gradient(135deg, var(--t-primary) 0%, var(--t-primary-dark) 100%);
+  padding: 0.875rem 1.5rem;
+  position: relative;
+  overflow: hidden;
+}
+.card-header::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: repeating-linear-gradient(
+    45deg,
+    transparent,
+    transparent 10px,
+    rgba(255,255,255,0.03) 10px,
+    rgba(255,255,255,0.03) 20px
+  );
+  pointer-events: none;
 }
 
-/* Leaderboard row animation */
+/* ─── Animations ─── */
 @keyframes slideIn {
-  from {
-    opacity: 0;
-    transform: translateX(-10px);
-  }
-  to {
-    opacity: 1;
-    transform: translateX(0);
-  }
+  from { opacity: 0; transform: translateX(-10px); }
+  to { opacity: 1; transform: translateX(0); }
 }
-
 .leaderboard-row {
   animation: slideIn 0.3s ease-out;
 }
 
-/* Score change flash */
 @keyframes scoreFlash {
   0% { background-color: rgba(242, 199, 92, 0.5); }
   100% { background-color: transparent; }
 }
-
 .score-update {
   animation: scoreFlash 2s ease-out;
 }
 
-/* Tier badge */
+@keyframes fadeInUp {
+  from { opacity: 0; transform: translateY(16px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.animate-fade-in-up {
+  animation: fadeInUp 0.5s ease-out;
+}
+
+/* Stagger children */
+.stagger-children > * { animation: fadeInUp 0.4s ease-out both; }
+.stagger-children > *:nth-child(1) { animation-delay: 0ms; }
+.stagger-children > *:nth-child(2) { animation-delay: 80ms; }
+.stagger-children > *:nth-child(3) { animation-delay: 160ms; }
+.stagger-children > *:nth-child(4) { animation-delay: 240ms; }
+
+/* ─── Tier badges ─── */
 .tier-badge {
   display: inline-flex;
   align-items: center;
@@ -106,12 +144,12 @@ body {
   font-weight: 700;
   font-size: 0.75rem;
   color: white;
+  box-shadow: 0 1px 2px rgba(0,0,0,0.15);
 }
-
-.tier-1 { background-color: var(--t-primary); }
-.tier-2 { background-color: #0891b2; }
-.tier-3 { background-color: #7c3aed; }
-.tier-4 { background-color: #c2410c; }
+.tier-1 { background: linear-gradient(135deg, #006747, #004d35); }
+.tier-2 { background: linear-gradient(135deg, #0891b2, #0e7490); }
+.tier-3 { background: linear-gradient(135deg, #7c3aed, #6d28d9); }
+.tier-4 { background: linear-gradient(135deg, #c2410c, #9a3412); }
 
 /* Cut indicator */
 .status-cut {
@@ -120,7 +158,26 @@ body {
   opacity: 0.6;
 }
 
-/* Subtle diagonal stripe pattern for hero/header sections */
+/* Hero gradient + subtle pattern */
+.hero-gradient {
+  background: linear-gradient(160deg, var(--t-primary) 0%, var(--t-primary-dark) 60%, #003325 100%);
+  position: relative;
+}
+.hero-gradient::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: repeating-linear-gradient(
+    45deg,
+    transparent,
+    transparent 10px,
+    rgba(255,255,255,0.02) 10px,
+    rgba(255,255,255,0.02) 20px
+  );
+  pointer-events: none;
+}
+
+/* Legacy pattern class (still used in some components) */
 .hero-pattern {
   background-image: repeating-linear-gradient(
     45deg,
@@ -131,43 +188,49 @@ body {
   );
 }
 
-/* Smooth card hover lift */
+/* Card hover lift */
 .card-hover {
   transition: transform 0.2s ease, box-shadow 0.2s ease;
 }
 .card-hover:hover {
   transform: translateY(-2px);
-  box-shadow: 0 8px 25px -5px rgba(0, 0, 0, 0.1), 0 4px 10px -6px rgba(0, 0, 0, 0.05);
+  box-shadow: var(--shadow-card-hover);
 }
-
-/* Fade in up animation for page sections */
-@keyframes fadeInUp {
-  from {
-    opacity: 0;
-    transform: translateY(16px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-.animate-fade-in-up {
-  animation: fadeInUp 0.5s ease-out;
-}
-
-/* Stagger children */
-.stagger-children > * {
-  animation: fadeInUp 0.4s ease-out both;
-}
-.stagger-children > *:nth-child(1) { animation-delay: 0ms; }
-.stagger-children > *:nth-child(2) { animation-delay: 80ms; }
-.stagger-children > *:nth-child(3) { animation-delay: 160ms; }
-.stagger-children > *:nth-child(4) { animation-delay: 240ms; }
 
 /* Button press feedback */
 .btn-press:active {
   transform: scale(0.97);
+}
+
+/* ─── Premium table styles ─── */
+.table-header {
+  background: linear-gradient(180deg, var(--t-cream) 0%, #f3ede3 100%);
+  border-bottom: 2px solid var(--t-primary);
+}
+.table-header th {
+  padding: 0.75rem;
+  text-align: left;
+  font-size: 0.65rem;
+  font-weight: 800;
+  color: var(--t-primary);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+/* ─── Gold accent underline for headings ─── */
+.heading-accent {
+  position: relative;
+  display: inline-block;
+}
+.heading-accent::after {
+  content: "";
+  position: absolute;
+  bottom: -4px;
+  left: 0;
+  width: 2.5rem;
+  height: 3px;
+  background: var(--t-accent);
+  border-radius: 2px;
 }
 
 /* Accessibility: respect reduced motion preferences */

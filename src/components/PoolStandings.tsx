@@ -34,7 +34,7 @@ export default function PoolStandings() {
 
   if (loading) {
     return (
-      <div className="bg-white rounded-xl shadow-md p-8 animate-pulse">
+      <div className="card p-8 animate-pulse">
         <div className="h-6 bg-gray-200 rounded w-48 mb-4" />
         {[1, 2, 3].map((i) => (
           <div key={i} className="h-16 bg-gray-100 rounded mb-2" />
@@ -45,7 +45,7 @@ export default function PoolStandings() {
 
   if (standings.length === 0) {
     return (
-      <div className="bg-white rounded-xl shadow-md p-8 text-center">
+      <div className="card p-8 text-center">
         <p className="text-gray-500">
           No entries yet. Invite friends to join and make their picks!
         </p>
@@ -54,9 +54,9 @@ export default function PoolStandings() {
   }
 
   return (
-    <div className="bg-white rounded-xl shadow-md overflow-hidden">
+    <div className="card">
       {/* Header */}
-      <div className="bg-t-primary hero-pattern px-6 py-4 flex items-center justify-between">
+      <div className="card-header flex items-center justify-between">
         <h2 className="text-white font-bold text-lg flex items-center gap-2">
           <TrophyIcon className="w-5 h-5" /> Pool Standings
         </h2>
@@ -71,17 +71,17 @@ export default function PoolStandings() {
       <div className="overflow-x-auto">
         <table className="w-full">
           <thead>
-            <tr className="bg-t-cream border-b border-t-primary/10">
-              <th className="px-4 py-3 text-left text-xs font-bold text-t-primary uppercase tracking-wider">
+            <tr className="table-header">
+              <th>
                 Rank
               </th>
-              <th className="px-4 py-3 text-left text-xs font-bold text-t-primary uppercase tracking-wider">
+              <th>
                 Player
               </th>
-              <th className="px-4 py-3 text-center text-xs font-bold text-t-primary uppercase tracking-wider">
+              <th className="text-center">
                 Best 5 Total
               </th>
-              <th className="px-4 py-3 text-center text-xs font-bold text-t-primary uppercase tracking-wider">
+              <th className="text-center">
                 Picks
               </th>
             </tr>
