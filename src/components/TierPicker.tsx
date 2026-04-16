@@ -180,7 +180,7 @@ export default function TierPicker() {
         </div>
         <div className="w-full bg-gray-200 rounded-full h-3">
           <div
-            className="bg-masters-green rounded-full h-3 transition-all duration-500"
+            className="bg-t-primary rounded-full h-3 transition-all duration-500"
             style={{ width: `${(totalPicks / 6) * 100}%` }}
           />
         </div>
@@ -214,7 +214,7 @@ export default function TierPicker() {
             <div
               className={`px-6 py-4 flex items-center justify-between ${
                 config.tier === 1
-                  ? "bg-masters-green"
+                  ? "bg-t-primary"
                   : config.tier === 2
                     ? "bg-cyan-600"
                     : config.tier === 3
@@ -245,17 +245,17 @@ export default function TierPicker() {
                     disabled={isDisabled}
                     className={`flex items-center gap-3 p-3 rounded-lg border-2 transition-all text-left ${
                       isSelected
-                        ? "border-masters-green bg-masters-green/5 shadow-md"
+                        ? "border-t-primary bg-t-primary/5 shadow-md"
                         : isDisabled
                           ? "border-gray-100 bg-gray-50 opacity-40 cursor-not-allowed"
-                          : "border-gray-200 hover:border-masters-green/50 hover:bg-masters-cream cursor-pointer"
+                          : "border-gray-200 hover:border-t-primary/50 hover:bg-t-cream cursor-pointer"
                     }`}
                   >
                     {/* Checkbox indicator */}
                     <div
                       className={`w-5 h-5 rounded-full border-2 flex items-center justify-center flex-shrink-0 ${
                         isSelected
-                          ? "border-masters-green bg-masters-green"
+                          ? "border-t-primary bg-t-primary"
                           : "border-gray-300"
                       }`}
                     >
@@ -317,7 +317,7 @@ export default function TierPicker() {
           disabled={!isComplete || saving || !hasChanges}
           className={`w-full py-4 rounded-xl font-bold text-lg shadow-lg transition-all ${
             isComplete && hasChanges
-              ? "bg-masters-green text-white hover:bg-masters-green-dark active:scale-[0.98]"
+              ? "bg-t-primary text-white hover:bg-t-primary-dark active:scale-[0.98]"
               : "bg-gray-300 text-gray-500 cursor-not-allowed"
           }`}
         >

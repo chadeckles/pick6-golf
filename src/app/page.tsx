@@ -29,11 +29,11 @@ export default function Home() {
   return (
     <div>
       {/* Hero Section */}
-      <section className="relative bg-masters-green green-pattern overflow-hidden">
+      <section className="relative bg-t-primary hero-pattern overflow-hidden">
         <div className="relative max-w-5xl mx-auto px-4 py-20 sm:py-28 text-center">
           <div className="inline-flex items-center gap-2 bg-white/10 backdrop-blur-sm px-4 py-2 rounded-full mb-6">
-            <div className="w-2 h-2 bg-masters-yellow rounded-full animate-pulse" />
-            <span className="text-masters-yellow text-sm font-medium">
+            <div className="w-2 h-2 bg-t-accent rounded-full animate-pulse" />
+            <span className="text-t-accent text-sm font-medium">
               {tournament.fullName} — {CURRENT_YEAR}
             </span>
           </div>
@@ -43,7 +43,7 @@ export default function Home() {
           <h1 className="text-4xl sm:text-6xl font-bold text-white mb-4 tracking-tight">
             Pick Six Golf
           </h1>
-          <p className="text-xl sm:text-2xl text-masters-yellow font-medium mb-2">
+          <p className="text-xl sm:text-2xl text-t-accent font-medium mb-2">
             {tournament.tagline}
           </p>
           <p className="text-white/80 text-lg max-w-2xl mx-auto mb-10">
@@ -54,7 +54,7 @@ export default function Home() {
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <Link
               href="/register"
-              className="inline-flex items-center gap-2 bg-masters-yellow text-masters-green-dark px-8 py-4 rounded-xl text-lg font-bold hover:bg-yellow-300 transition-all shadow-lg hover:shadow-xl active:scale-[0.98]"
+              className="inline-flex items-center gap-2 bg-t-accent text-t-primary-dark px-8 py-4 rounded-xl text-lg font-bold hover:bg-yellow-300 transition-all shadow-lg hover:shadow-xl active:scale-[0.98]"
             >
               <ClickIcon className="w-5 h-5" /> Join a Pool
             </Link>
@@ -151,35 +151,35 @@ export default function Home() {
                 step: "1",
                 title: "Register",
                 desc: "Create your account and join or create a pool with friends.",
-                icon: <UserIcon className="w-7 h-7 text-masters-green" />,
+                icon: <UserIcon className="w-7 h-7 text-t-primary" />,
               },
               {
                 step: "2",
                 title: "Pick Your 6",
                 desc: "Draft one golfer per tier — see the tier breakdown below.",
-                icon: <TargetIcon className="w-7 h-7 text-masters-green" />,
+                icon: <TargetIcon className="w-7 h-7 text-t-primary" />,
               },
               {
                 step: "3",
                 title: "Watch & Track",
                 desc: "Follow live scoring on the dashboard as the tournament unfolds.",
-                icon: <ChartIcon className="w-7 h-7 text-masters-green" />,
+                icon: <ChartIcon className="w-7 h-7 text-t-primary" />,
               },
               {
                 step: "4",
                 title: "Win!",
                 desc: "Lowest combined to-par score from your best 5 of 6 picks wins.",
-                icon: <TrophyIcon className="w-7 h-7 text-masters-green" />,
+                icon: <TrophyIcon className="w-7 h-7 text-t-primary" />,
               },
             ].map((item, idx) => (
               <div
                 key={item.step}
-                className="text-center bg-masters-cream rounded-xl shadow-md p-6 hover:shadow-lg transition-shadow"
+                className="text-center bg-t-cream rounded-xl shadow-md p-6 hover:shadow-lg transition-shadow"
               >
                 <div className="w-14 h-14 bg-white rounded-full flex items-center justify-center mx-auto mb-4">
                   {item.icon}
                 </div>
-                <div className="inline-flex items-center justify-center w-7 h-7 bg-masters-green text-white rounded-full text-sm font-bold mb-3">
+                <div className="inline-flex items-center justify-center w-7 h-7 bg-t-primary text-white rounded-full text-sm font-bold mb-3">
                   {item.step}
                 </div>
                 <h3 className="font-bold text-gray-900 mb-2">{item.title}</h3>
@@ -203,7 +203,7 @@ export default function Home() {
 
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 stagger-children">
             {[
-              { tier: 1, picks: 1, color: "bg-masters-green" },
+              { tier: 1, picks: 1, color: "bg-t-primary" },
               { tier: 2, picks: 2, color: "bg-cyan-600" },
               { tier: 3, picks: 2, color: "bg-violet-600" },
               { tier: 4, picks: 1, color: "bg-orange-700" },
@@ -226,7 +226,7 @@ export default function Home() {
                     <p className="font-bold text-gray-900 mb-1">
                       Ranked {label?.range}
                     </p>
-                    <p className="text-masters-green font-bold mb-2">
+                    <p className="text-t-primary font-bold mb-2">
                       Pick {t.picks}
                     </p>
                     <p className="text-gray-500 text-xs">{label?.desc}</p>
@@ -240,45 +240,45 @@ export default function Home() {
 
       {/* Scoring Rules */}
       <section className="max-w-5xl mx-auto px-4 pt-8 pb-16">
-        <div className="bg-masters-cream rounded-2xl p-8 sm:p-12">
+        <div className="bg-t-cream rounded-2xl p-8 sm:p-12">
           <h2 className="text-2xl font-bold text-gray-900 mb-6 flex items-center gap-3">
-            <ClipboardIcon className="w-6 h-6 text-masters-green" /> Scoring Rules
+            <ClipboardIcon className="w-6 h-6 text-t-primary" /> Scoring Rules
           </h2>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div>
-              <h3 className="font-bold text-masters-green mb-3">
+              <h3 className="font-bold text-t-primary mb-3">
                 Basic Scoring
               </h3>
               <ul className="space-y-2 text-gray-700 text-sm">
                 <li className="flex gap-2">
-                  <span className="text-masters-green font-bold">•</span>
+                  <span className="text-t-primary font-bold">•</span>
                   6 picks across 4 OWGR-based tiers (1-2-2-1)
                 </li>
                 <li className="flex gap-2">
-                  <span className="text-masters-green font-bold">•</span>
+                  <span className="text-t-primary font-bold">•</span>
                   Your worst golfer&apos;s score is dropped (best 5 of 6 count)
                 </li>
                 <li className="flex gap-2">
-                  <span className="text-masters-green font-bold">•</span>
+                  <span className="text-t-primary font-bold">•</span>
                   Lowest combined to-par score wins
                 </li>
               </ul>
             </div>
             <div>
-              <h3 className="font-bold text-masters-green mb-3">
+              <h3 className="font-bold text-t-primary mb-3">
                 Special Rules
               </h3>
               <ul className="space-y-2 text-gray-700 text-sm">
                 <li className="flex gap-2">
-                  <span className="text-masters-azalea font-bold">•</span>
+                  <span className="text-t-highlight font-bold">•</span>
                   Missed cut: Golfer receives 80 strokes per remaining round
                 </li>
                 <li className="flex gap-2">
-                  <span className="text-masters-azalea font-bold">•</span>
+                  <span className="text-t-highlight font-bold">•</span>
                   Withdrawals treated same as missed cuts
                 </li>
                 <li className="flex gap-2">
-                  <span className="text-masters-azalea font-bold">•</span>
+                  <span className="text-t-highlight font-bold">•</span>
                   Tiebreaker: Total strokes across all 4 rounds
                 </li>
               </ul>
@@ -288,7 +288,7 @@ export default function Home() {
       </section>
 
       {/* CTA */}
-      <section className="bg-masters-green green-pattern py-16">
+      <section className="bg-t-primary hero-pattern py-16">
         <div className="max-w-3xl mx-auto px-4 text-center">
           <h2 className="text-3xl font-bold text-white mb-4">
             Ready to Play?
@@ -298,7 +298,7 @@ export default function Home() {
           </p>
           <Link
             href="/register"
-            className="inline-block bg-masters-yellow text-masters-green-dark px-10 py-4 rounded-xl text-lg font-bold hover:bg-yellow-300 transition-all shadow-lg hover:shadow-xl active:scale-[0.98]"
+            className="inline-block bg-t-accent text-t-primary-dark px-10 py-4 rounded-xl text-lg font-bold hover:bg-yellow-300 transition-all shadow-lg hover:shadow-xl active:scale-[0.98]"
           >
             Create Your Account →
           </Link>

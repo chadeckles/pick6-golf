@@ -56,12 +56,12 @@ export default function PoolStandings() {
   return (
     <div className="bg-white rounded-xl shadow-md overflow-hidden">
       {/* Header */}
-      <div className="bg-masters-green green-pattern px-6 py-4 flex items-center justify-between">
+      <div className="bg-t-primary hero-pattern px-6 py-4 flex items-center justify-between">
         <h2 className="text-white font-bold text-lg flex items-center gap-2">
           <TrophyIcon className="w-5 h-5" /> Pool Standings
         </h2>
         {lastUpdate && (
-          <span className="text-masters-yellow text-xs">
+          <span className="text-t-accent text-xs">
             Updated {lastUpdate.toLocaleTimeString()}
           </span>
         )}
@@ -71,17 +71,17 @@ export default function PoolStandings() {
       <div className="overflow-x-auto">
         <table className="w-full">
           <thead>
-            <tr className="bg-masters-cream border-b border-masters-green/10">
-              <th className="px-4 py-3 text-left text-xs font-bold text-masters-green uppercase tracking-wider">
+            <tr className="bg-t-cream border-b border-t-primary/10">
+              <th className="px-4 py-3 text-left text-xs font-bold text-t-primary uppercase tracking-wider">
                 Rank
               </th>
-              <th className="px-4 py-3 text-left text-xs font-bold text-masters-green uppercase tracking-wider">
+              <th className="px-4 py-3 text-left text-xs font-bold text-t-primary uppercase tracking-wider">
                 Player
               </th>
-              <th className="px-4 py-3 text-center text-xs font-bold text-masters-green uppercase tracking-wider">
+              <th className="px-4 py-3 text-center text-xs font-bold text-t-primary uppercase tracking-wider">
                 Best 5 Total
               </th>
-              <th className="px-4 py-3 text-center text-xs font-bold text-masters-green uppercase tracking-wider">
+              <th className="px-4 py-3 text-center text-xs font-bold text-t-primary uppercase tracking-wider">
                 Picks
               </th>
             </tr>
@@ -92,11 +92,11 @@ export default function PoolStandings() {
                 <tr
                   className={`leaderboard-row border-b border-gray-100 cursor-pointer transition-colors ${
                     idx === 0
-                      ? "bg-masters-yellow/10"
+                      ? "bg-t-accent/10"
                       : idx % 2 === 0
                         ? "bg-white"
                         : "bg-gray-50/50"
-                  } hover:bg-masters-yellow/5`}
+                  } hover:bg-t-accent/5`}
                   style={{ animationDelay: `${idx * 50}ms` }}
                   onClick={() =>
                     setExpandedUser(
@@ -108,7 +108,7 @@ export default function PoolStandings() {
                     <span
                       className={`inline-flex items-center justify-center w-8 h-8 rounded-full font-bold text-sm ${
                         entry.rank === 1
-                          ? "bg-masters-yellow text-masters-green-dark"
+                          ? "bg-t-accent text-t-primary-dark"
                           : entry.rank === 2
                             ? "bg-gray-200 text-gray-700"
                             : entry.rank === 3
@@ -152,7 +152,7 @@ export default function PoolStandings() {
                 {/* Expanded picks */}
                 {expandedUser === entry.userId && (
                   <tr>
-                    <td colSpan={4} className="px-4 py-3 bg-masters-sky/30">
+                    <td colSpan={4} className="px-4 py-3 bg-t-sky/30">
                       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
                         {entry.picks.map((pick) => (
                           <div

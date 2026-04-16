@@ -46,13 +46,13 @@ export default function Leaderboard() {
   return (
     <div className="bg-white rounded-xl shadow-md overflow-hidden">
       {/* Header */}
-      <div className="bg-masters-green green-pattern px-6 py-4 flex items-center justify-between">
+      <div className="bg-t-primary hero-pattern px-6 py-4 flex items-center justify-between">
         <h2 className="text-white font-bold text-lg flex items-center gap-2">
           <FlagIcon className="w-5 h-5" /> Leaderboard
         </h2>
         <div className="flex items-center gap-3">
           {lastUpdate && (
-            <span className="text-masters-yellow text-xs">
+            <span className="text-t-accent text-xs">
               Updated {lastUpdate.toLocaleTimeString()}
             </span>
           )}
@@ -64,32 +64,32 @@ export default function Leaderboard() {
       <div className="overflow-x-auto">
         <table className="w-full">
           <thead>
-            <tr className="bg-masters-cream border-b border-masters-green/10">
-              <th className="px-3 py-2 text-left text-xs font-bold text-masters-green uppercase tracking-wider w-16">
+            <tr className="bg-t-cream border-b border-t-primary/10">
+              <th className="px-3 py-2 text-left text-xs font-bold text-t-primary uppercase tracking-wider w-16">
                 Pos
               </th>
-              <th className="px-3 py-2 text-left text-xs font-bold text-masters-green uppercase tracking-wider">
+              <th className="px-3 py-2 text-left text-xs font-bold text-t-primary uppercase tracking-wider">
                 Player
               </th>
-              <th className="px-3 py-2 text-center text-xs font-bold text-masters-green uppercase tracking-wider w-20">
+              <th className="px-3 py-2 text-center text-xs font-bold text-t-primary uppercase tracking-wider w-20">
                 To Par
               </th>
-              <th className="px-3 py-2 text-center text-xs font-bold text-masters-green uppercase tracking-wider w-16">
+              <th className="px-3 py-2 text-center text-xs font-bold text-t-primary uppercase tracking-wider w-16">
                 Thru
               </th>
-              <th className="px-3 py-2 text-center text-xs font-bold text-masters-green uppercase tracking-wider w-12">
+              <th className="px-3 py-2 text-center text-xs font-bold text-t-primary uppercase tracking-wider w-12">
                 R1
               </th>
-              <th className="px-3 py-2 text-center text-xs font-bold text-masters-green uppercase tracking-wider w-12">
+              <th className="px-3 py-2 text-center text-xs font-bold text-t-primary uppercase tracking-wider w-12">
                 R2
               </th>
-              <th className="px-3 py-2 text-center text-xs font-bold text-masters-green uppercase tracking-wider w-12">
+              <th className="px-3 py-2 text-center text-xs font-bold text-t-primary uppercase tracking-wider w-12">
                 R3
               </th>
-              <th className="px-3 py-2 text-center text-xs font-bold text-masters-green uppercase tracking-wider w-12">
+              <th className="px-3 py-2 text-center text-xs font-bold text-t-primary uppercase tracking-wider w-12">
                 R4
               </th>
-              <th className="px-3 py-2 text-center text-xs font-bold text-masters-green uppercase tracking-wider w-16">
+              <th className="px-3 py-2 text-center text-xs font-bold text-t-primary uppercase tracking-wider w-16">
                 Tier
               </th>
             </tr>
@@ -101,8 +101,8 @@ export default function Leaderboard() {
                 className={`leaderboard-row border-b border-gray-100 transition-colors ${
                   golfer.status === "cut" ? "status-cut bg-red-50/50" : ""
                 } ${
-                  idx < 3 ? "bg-masters-yellow/5" : idx % 2 === 0 ? "bg-white" : "bg-gray-50/30"
-                } hover:bg-masters-yellow/10`}
+                  idx < 3 ? "bg-t-accent/5" : idx % 2 === 0 ? "bg-white" : "bg-gray-50/30"
+                } hover:bg-t-accent/10`}
                 style={{ animationDelay: `${idx * 30}ms` }}
               >
                 <td className="px-3 py-2">

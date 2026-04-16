@@ -73,15 +73,15 @@ export default function PoolManager({ onPoolReady }: PoolManagerProps) {
   if (createdCode) {
     return (
       <div className="bg-white rounded-xl shadow-md p-8 max-w-md mx-auto text-center">
-        <div className="w-16 h-16 bg-masters-green rounded-full flex items-center justify-center mx-auto mb-4">
+        <div className="w-16 h-16 bg-t-primary rounded-full flex items-center justify-center mx-auto mb-4">
           <TrophyIcon className="w-8 h-8 text-white" />
         </div>
         <h3 className="text-xl font-bold text-gray-900 mb-2">Pool Created!</h3>
         <p className="text-gray-600 mb-6">
           Share this invite code with your group:
         </p>
-        <div className="bg-masters-cream border-2 border-masters-green rounded-lg p-4 mb-6">
-          <span className="text-2xl font-mono font-bold text-masters-green tracking-widest">
+        <div className="bg-t-cream border-2 border-t-primary rounded-lg p-4 mb-6">
+          <span className="text-2xl font-mono font-bold text-t-primary tracking-widest">
             {createdCode}
           </span>
         </div>
@@ -95,7 +95,7 @@ export default function PoolManager({ onPoolReady }: PoolManagerProps) {
         </button>
         <button
           onClick={onPoolReady}
-          className="bg-masters-green text-white px-6 py-2 rounded-lg font-bold hover:bg-masters-green-dark transition-colors"
+          className="bg-t-primary text-white px-6 py-2 rounded-lg font-bold hover:bg-t-primary-dark transition-colors"
         >
           Continue to Picks →
         </button>
@@ -107,8 +107,8 @@ export default function PoolManager({ onPoolReady }: PoolManagerProps) {
     <div className="max-w-md mx-auto">
       {mode === "choose" && (
         <div className="bg-white rounded-xl shadow-md p-8 text-center">
-          <div className="w-16 h-16 bg-masters-yellow rounded-full flex items-center justify-center mx-auto mb-4">
-            <FlagIcon className="w-8 h-8 text-masters-green" />
+          <div className="w-16 h-16 bg-t-accent rounded-full flex items-center justify-center mx-auto mb-4">
+            <FlagIcon className="w-8 h-8 text-t-primary" />
           </div>
           <h3 className="text-xl font-bold text-gray-900 mb-2">
             Join or Create a Pool
@@ -119,13 +119,13 @@ export default function PoolManager({ onPoolReady }: PoolManagerProps) {
           <div className="space-y-3">
             <button
               onClick={() => setMode("join")}
-              className="w-full bg-masters-green text-white py-3 rounded-lg font-bold hover:bg-masters-green-dark transition-colors"
+              className="w-full bg-t-primary text-white py-3 rounded-lg font-bold hover:bg-t-primary-dark transition-colors"
             >
               Join Existing Pool
             </button>
             <button
               onClick={() => setMode("create")}
-              className="w-full bg-white border-2 border-masters-green text-masters-green py-3 rounded-lg font-bold hover:bg-masters-cream transition-colors"
+              className="w-full bg-white border-2 border-t-primary text-t-primary py-3 rounded-lg font-bold hover:bg-t-cream transition-colors"
             >
               Create New Pool
             </button>
@@ -159,13 +159,13 @@ export default function PoolManager({ onPoolReady }: PoolManagerProps) {
                 value={poolName}
                 onChange={(e) => setPoolName(e.target.value)}
                 placeholder={`e.g. ${tournament.name} Pool ${CURRENT_YEAR}`}
-                className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-masters-green focus:border-transparent"
+                className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-t-primary focus:border-transparent"
               />
             </div>
             <button
               onClick={handleCreate}
               disabled={loading}
-              className="w-full bg-masters-green text-white py-3 rounded-lg font-bold hover:bg-masters-green-dark transition-colors disabled:opacity-50"
+              className="w-full bg-t-primary text-white py-3 rounded-lg font-bold hover:bg-t-primary-dark transition-colors disabled:opacity-50"
             >
               {loading ? "Creating..." : "Create Pool"}
             </button>
@@ -199,14 +199,14 @@ export default function PoolManager({ onPoolReady }: PoolManagerProps) {
                 value={inviteCode}
                 onChange={(e) => setInviteCode(e.target.value.toUpperCase())}
                 placeholder="e.g. A1B2C3D4"
-                className="w-full border border-gray-300 rounded-lg px-4 py-2 text-center font-mono text-lg tracking-widest focus:outline-none focus:ring-2 focus:ring-masters-green focus:border-transparent uppercase"
+                className="w-full border border-gray-300 rounded-lg px-4 py-2 text-center font-mono text-lg tracking-widest focus:outline-none focus:ring-2 focus:ring-t-primary focus:border-transparent uppercase"
                 maxLength={8}
               />
             </div>
             <button
               onClick={handleJoin}
               disabled={loading}
-              className="w-full bg-masters-green text-white py-3 rounded-lg font-bold hover:bg-masters-green-dark transition-colors disabled:opacity-50"
+              className="w-full bg-t-primary text-white py-3 rounded-lg font-bold hover:bg-t-primary-dark transition-colors disabled:opacity-50"
             >
               {loading ? "Joining..." : "Join Pool"}
             </button>

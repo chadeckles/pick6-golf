@@ -1,84 +1,80 @@
 /**
- * Pick 6 Golf — Tournament Configuration System
+ * Pick 6 Golf — Tournament Configuration
  *
- * Each tournament is a self-contained config: colors, ESPN mapping,
- * course info, dates, tier structure, and branding.
+ * ── What lives where ─────────────────────────────────────────────
+ *  tournaments.yaml  → Stuff that changes every year:
+ *                       ESPN event IDs, dates, course/par overrides
  *
- * To add a new tournament: add a TournamentConfig entry below
- * and (optionally) a tiers file at `src/lib/tournaments/tiers/{slug}.ts`.
+ *  This file (config.ts) → Stuff that almost never changes:
+ *                       Names, themes, colors, tier labels, logos,
+ *                       descriptions, disclaimers
+ *
+ * ── Yearly maintenance ───────────────────────────────────────────
+ *  1. Open  tournaments.yaml  (project root)
+ *  2. Add one line per tournament for the new year
+ *  3. Run  npm run sync       (or just start dev/build — it's automatic)
+ *  4. Done. No TypeScript changes needed.
+ * ─────────────────────────────────────────────────────────────────
  */
+
+import schedule from "./schedule.json";
 
 // ─── Types ──────────────────────────────────────────────────────────────
 
 export interface TournamentTheme {
-  /** Primary brand color (e.g. Augusta green) */
   primary: string;
-  /** Darker shade for headers, dark backgrounds */
   primaryDark: string;
-  /** Lighter shade for hover states */
   primaryLight: string;
-  /** Accent/highlight color (e.g. yellow, gold) */
   accent: string;
-  /** Muted accent for subtle highlights */
   accentMuted: string;
-  /** Light background / cream tone */
   cream: string;
-  /** Highlight color for alerts, cut indicators */
   highlight: string;
-  /** Light sky-blue-ish background for expanded sections */
   sky: string;
 }
 
 export interface TournamentConfig {
-  /** Unique identifier — used in URLs and storage */
   slug: string;
-  /** Short display name */
   name: string;
-  /** Full official name */
   fullName: string;
-  /** Tagline for hero section */
   tagline: string;
-  /** Course name */
   course: string;
-  /** Course par (for scoring calculations) */
   par: number;
-  /** Path to tournament logo in /public */
   logo: string;
-  /** Known ESPN event IDs by year */
   espnEventIds: Record<number, string>;
-  /** Theme colors */
   theme: TournamentTheme;
-  /** Tournament dates by year { start (Thursday), end (Sunday) } */
   dates: Record<number, { month: number; start: number; end: number }>;
-  /** Number of picks (default 6) */
   totalPicks?: number;
-  /** Picks per tier { tier: count } — must sum to totalPicks */
   picksPerTier?: Record<number, number>;
-  /** Tier labels */
   tierLabels?: Record<number, { name: string; range: string; desc: string }>;
-  /** Whether this tournament is currently active/available */
   active: boolean;
-  /** Brief description for tournament selector */
   description: string;
-  /** Footer disclaimer */
   disclaimer: string;
 }
 
-// ─── Tournament Configs ─────────────────────────────────────────────────
+// ─── Permanent tournament data (rarely changes) ─────────────────────────
 
-export const TOURNAMENTS: Record<string, TournamentConfig> = {
+interface TournamentBase {
+  name: string;
+  fullName: string;
+  tagline: string;
+  course: string;
+  par: number;
+  logo: string;
+  theme: TournamentTheme;
+  tierLabels: Record<number, { name: string; range: string; desc: string }>;
+  active: boolean;
+  description: string;
+  disclaimer: string;
+}
+
+const TOURNAMENT_BASES: Record<string, TournamentBase> = {
   masters: {
-    slug: "masters",
     name: "The Masters",
     fullName: "Masters Tournament",
     tagline: "A Tradition Unlike Any Other",
     course: "Augusta National Golf Club",
     par: 72,
     logo: "/logos/masters.png",
-    espnEventIds: {
-      2025: "401580344",
-      2026: "401811941",
-    },
     theme: {
       primary: "#006747",
       primaryDark: "#004d35",
@@ -88,12 +84,6 @@ export const TOURNAMENTS: Record<string, TournamentConfig> = {
       cream: "#fdf8f0",
       highlight: "#d23669",
       sky: "#e8f4f8",
-    },
-    dates: {
-      2025: { month: 4, start: 10, end: 13 },
-      2026: { month: 4, start: 9, end: 12 },
-      2027: { month: 4, start: 8, end: 11 },
-      2028: { month: 4, start: 6, end: 9 },
     },
     tierLabels: {
       1: { name: "Elite", range: "Top 10", desc: "The favorites. Consistent but everyone wants them." },
@@ -107,16 +97,12 @@ export const TOURNAMENTS: Record<string, TournamentConfig> = {
   },
 
   pga: {
-    slug: "pga",
     name: "PGA Championship",
     fullName: "PGA Championship",
     tagline: "Glory's Last Shot",
     course: "Quail Hollow Club",
     par: 71,
     logo: "/logos/pga.png",
-    espnEventIds: {
-      2026: "401811947",
-    },
     theme: {
       primary: "#00205B",
       primaryDark: "#001740",
@@ -126,9 +112,6 @@ export const TOURNAMENTS: Record<string, TournamentConfig> = {
       cream: "#f8f6f0",
       highlight: "#c8102e",
       sky: "#e8eef8",
-    },
-    dates: {
-      2026: { month: 5, start: 14, end: 17 },
     },
     tierLabels: {
       1: { name: "Elite", range: "Top 10", desc: "Major champions and world-beaters." },
@@ -142,16 +125,12 @@ export const TOURNAMENTS: Record<string, TournamentConfig> = {
   },
 
   usopen: {
-    slug: "usopen",
     name: "US Open",
     fullName: "United States Open Championship",
     tagline: "The Toughest Test in Golf",
     course: "Shinnecock Hills Golf Club",
     par: 70,
     logo: "/logos/usopen.png",
-    espnEventIds: {
-      2026: "401811952",
-    },
     theme: {
       primary: "#002855",
       primaryDark: "#001B3A",
@@ -161,9 +140,6 @@ export const TOURNAMENTS: Record<string, TournamentConfig> = {
       cream: "#f5f3ee",
       highlight: "#C8102E",
       sky: "#e8ecf4",
-    },
-    dates: {
-      2026: { month: 6, start: 18, end: 21 },
     },
     tierLabels: {
       1: { name: "Favorites", range: "Top 10", desc: "The best in the world on the hardest course." },
@@ -177,16 +153,12 @@ export const TOURNAMENTS: Record<string, TournamentConfig> = {
   },
 
   theopen: {
-    slug: "theopen",
     name: "The Open",
     fullName: "The Open Championship",
     tagline: "The Original Championship",
     course: "Royal Portrush Golf Club",
     par: 71,
     logo: "/logos/theopen.png",
-    espnEventIds: {
-      2026: "401811957",
-    },
     theme: {
       primary: "#1B2A4A",
       primaryDark: "#111D33",
@@ -196,9 +168,6 @@ export const TOURNAMENTS: Record<string, TournamentConfig> = {
       cream: "#f7f5ef",
       highlight: "#8B1A1A",
       sky: "#eaecf2",
-    },
-    dates: {
-      2026: { month: 7, start: 16, end: 19 },
     },
     tierLabels: {
       1: { name: "Open Royalty", range: "Top 10", desc: "Links legends and world number ones." },
@@ -210,81 +179,89 @@ export const TOURNAMENTS: Record<string, TournamentConfig> = {
     description: "The oldest major in golf. Pick your 6 for the Claret Jug chase.",
     disclaimer: "Not affiliated with The R&A",
   },
-
-  rydercup: {
-    slug: "rydercup",
-    name: "Ryder Cup",
-    fullName: "Ryder Cup",
-    tagline: "USA vs Europe",
-    course: "Adare Manor",
-    par: 72,
-    logo: "/logos/rydercup.png",
-    espnEventIds: {
-      2026: "401824815",
-    },
-    theme: {
-      primary: "#1C2841",
-      primaryDark: "#121B2E",
-      primaryLight: "#2A3F6B",
-      accent: "#C9A84C",
-      accentMuted: "#A68C3A",
-      cream: "#f6f4ee",
-      highlight: "#B22234",
-      sky: "#e9ecf3",
-    },
-    dates: {
-      2026: { month: 9, start: 24, end: 27 },
-    },
-    totalPicks: 6,
-    tierLabels: {
-      1: { name: "Captains", range: "Top 10", desc: "Automatic qualifiers and team leaders." },
-      2: { name: "Veterans", range: "11-25", desc: "Ryder Cup experience counts for everything." },
-      3: { name: "Debutants", range: "26-50", desc: "Hungry to prove themselves on the big stage." },
-      4: { name: "Captain's Picks", range: "51+", desc: "The wild cards that can change everything." },
-    },
-    active: false,
-    description: "USA vs Europe. Pick your 6 for the greatest team event in golf.",
-    disclaimer: "Not affiliated with Ryder Cup Europe or PGA of America",
-  },
 };
+
+// ─── Merge base configs + schedule.json (generated from YAML) ───────
+
+interface ScheduleEntry {
+  espnId: string;
+  month: number;
+  start: number;
+  end: number;
+  course?: string;
+  par?: number;
+}
+
+type Schedule = Record<string, Record<string, ScheduleEntry>>;
+
+function buildTournaments(): Record<string, TournamentConfig> {
+  const sched = schedule as Schedule;
+  const result: Record<string, TournamentConfig> = {};
+  const currentYear = new Date().getFullYear();
+
+  for (const [slug, base] of Object.entries(TOURNAMENT_BASES)) {
+    const yearEntries = sched[slug] ?? {};
+
+    const espnEventIds: Record<number, string> = {};
+    const dates: Record<number, { month: number; start: number; end: number }> = {};
+
+    for (const [yearStr, entry] of Object.entries(yearEntries)) {
+      const year = Number(yearStr);
+      if (entry.espnId) espnEventIds[year] = entry.espnId;
+      dates[year] = { month: entry.month, start: entry.start, end: entry.end };
+    }
+
+    // Allow per-year course/par overrides from YAML
+    const currentEntry = yearEntries[String(currentYear)] as ScheduleEntry | undefined;
+    const course = currentEntry?.course ?? base.course;
+    const par = currentEntry?.par ?? base.par;
+
+    result[slug] = {
+      slug,
+      ...base,
+      course,
+      par,
+      espnEventIds,
+      dates,
+    };
+  }
+
+  return result;
+}
+
+export const TOURNAMENTS: Record<string, TournamentConfig> = buildTournaments();
 
 // ─── Helpers ────────────────────────────────────────────────────────────
 
-/** Get all active tournaments as an array, sorted by next date */
 export function getActiveTournaments(): TournamentConfig[] {
   return Object.values(TOURNAMENTS).filter((t) => t.active);
 }
 
-/** Get a tournament by slug, falling back to Masters */
 export function getTournament(slug: string): TournamentConfig {
   return TOURNAMENTS[slug] ?? TOURNAMENTS.masters;
 }
 
-/** Get the default (currently active or next upcoming) tournament */
 export function getDefaultTournament(): TournamentConfig {
   const now = new Date();
   const year = now.getFullYear();
   const month = now.getMonth() + 1;
   const day = now.getDate();
 
-  // Find the tournament whose dates bracket today, or the next upcoming one
   const tournaments = getActiveTournaments();
 
-  // Check if we're currently in a tournament window (± a few days for pre/post)
   for (const t of tournaments) {
-    const dates = t.dates[year];
-    if (!dates) continue;
-    if (month === dates.month && day >= dates.start - 3 && day <= dates.end + 3) {
+    const d = t.dates[year];
+    if (!d) continue;
+    if (month === d.month && day >= d.start - 3 && day <= d.end + 3) {
       return t;
     }
   }
 
-  // Find next upcoming tournament this year
   const upcoming = tournaments
     .filter((t) => {
-      const dates = t.dates[year];
-      if (!dates) return false;
-      return month < dates.month || (month === dates.month && day < dates.start);
+      const d = t.dates[year];
+      if (!d) return false;
+      return month < d.month || (month === d.month && day < d.start);
     })
     .sort((a, b) => {
       const ad = a.dates[year]!;
@@ -295,10 +272,6 @@ export function getDefaultTournament(): TournamentConfig {
   return upcoming[0] ?? TOURNAMENTS.masters;
 }
 
-/**
- * Generate CSS custom property assignments for a tournament theme.
- * These get applied to :root or a wrapper element to swap the entire color palette.
- */
 export function getThemeCSSVars(theme: TournamentTheme): Record<string, string> {
   return {
     "--t-primary": theme.primary,

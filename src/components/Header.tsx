@@ -48,7 +48,7 @@ export default function Header() {
   }
 
   return (
-    <header className="bg-masters-green-dark shadow-lg sticky top-0 z-50">
+    <header className="bg-t-primary-dark shadow-lg sticky top-0 z-50">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16">
           {/* Logo / Title */}
@@ -67,11 +67,11 @@ export default function Header() {
                 onClick={() => setTournamentDropdown(!tournamentDropdown)}
                 className="flex items-center gap-1 bg-white/10 hover:bg-white/20 transition-colors rounded px-2 py-0.5 ml-1"
               >
-                <span className="text-masters-yellow text-xs tracking-widest uppercase font-bold">
+                <span className="text-t-accent text-xs tracking-widest uppercase font-bold">
                   {tournament.name}
                 </span>
                 <svg
-                  className={`w-3 h-3 text-masters-yellow/60 transition-transform ${tournamentDropdown ? "rotate-180" : ""}`}
+                  className={`w-3 h-3 text-t-accent/60 transition-transform ${tournamentDropdown ? "rotate-180" : ""}`}
                   fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}
                 >
                   <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
@@ -94,7 +94,7 @@ export default function Header() {
                         }}
                         className={`w-full text-left px-4 py-2 text-sm transition-colors flex items-center gap-2 ${
                           t.slug === tournament.slug
-                            ? "bg-masters-cream font-bold text-gray-900"
+                            ? "bg-t-cream font-bold text-gray-900"
                             : "text-gray-700 hover:bg-gray-50"
                         }`}
                       >
@@ -104,7 +104,7 @@ export default function Header() {
                         />
                         {t.name}
                         {t.slug === tournament.slug && (
-                          <span className="ml-auto text-xs text-masters-green">✓</span>
+                          <span className="ml-auto text-xs text-t-primary">✓</span>
                         )}
                       </button>
                     ))}
@@ -120,7 +120,7 @@ export default function Header() {
               href="/leaderboard"
               className={`text-sm font-medium transition-colors ${
                 pathname === "/leaderboard"
-                  ? "text-masters-yellow"
+                  ? "text-t-accent"
                   : "text-white/80 hover:text-white"
               }`}
             >
@@ -133,7 +133,7 @@ export default function Header() {
                   href="/dashboard"
                   className={`text-sm font-medium transition-colors ${
                     pathname === "/dashboard"
-                      ? "text-masters-yellow"
+                      ? "text-t-accent"
                       : "text-white/80 hover:text-white"
                   }`}
                 >
@@ -143,7 +143,7 @@ export default function Header() {
                   href="/picks"
                   className={`text-sm font-medium transition-colors ${
                     pathname === "/picks"
-                      ? "text-masters-yellow"
+                      ? "text-t-accent"
                       : "text-white/80 hover:text-white"
                   }`}
                 >
@@ -156,7 +156,7 @@ export default function Header() {
                     onClick={() => setMenuOpen(!menuOpen)}
                     className="flex items-center gap-2 bg-white/10 hover:bg-white/20 transition-colors rounded-lg px-3 py-1.5"
                   >
-                    <div className="w-7 h-7 bg-masters-yellow rounded-full flex items-center justify-center text-masters-green-dark font-bold text-sm">
+                    <div className="w-7 h-7 bg-t-accent rounded-full flex items-center justify-center text-t-primary-dark font-bold text-sm">
                       {user.name.charAt(0).toUpperCase()}
                     </div>
                     <span className="text-white text-sm font-medium max-w-[120px] truncate hidden sm:inline">
@@ -191,14 +191,14 @@ export default function Header() {
                         <Link
                           href="/dashboard"
                           onClick={() => setMenuOpen(false)}
-                          className="flex items-center gap-2 px-4 py-2 text-sm text-gray-700 hover:bg-masters-cream transition-colors"
+                          className="flex items-center gap-2 px-4 py-2 text-sm text-gray-700 hover:bg-t-cream transition-colors"
                         >
                           <ChartIcon className="w-4 h-4" /> Dashboard
                         </Link>
                         <Link
                           href="/picks"
                           onClick={() => setMenuOpen(false)}
-                          className="flex items-center gap-2 px-4 py-2 text-sm text-gray-700 hover:bg-masters-cream transition-colors"
+                          className="flex items-center gap-2 px-4 py-2 text-sm text-gray-700 hover:bg-t-cream transition-colors"
                         >
                           <TargetIcon className="w-4 h-4" /> My Picks
                         </Link>
@@ -223,7 +223,7 @@ export default function Header() {
                 </Link>
                 <Link
                   href="/register"
-                  className="bg-masters-yellow text-masters-green-dark px-4 py-2 rounded-lg text-sm font-bold hover:bg-yellow-300 transition-colors shadow-md"
+                  className="bg-t-accent text-t-primary-dark px-4 py-2 rounded-lg text-sm font-bold hover:bg-yellow-300 transition-colors shadow-md"
                 >
                   Join Pool
                 </Link>
@@ -287,7 +287,7 @@ export default function Header() {
                 </Link>
                 <Link
                   href="/register"
-                  className="block mx-4 mt-2 text-center bg-masters-yellow text-masters-green-dark px-4 py-2 rounded-lg text-sm font-bold"
+                  className="block mx-4 mt-2 text-center bg-t-accent text-t-primary-dark px-4 py-2 rounded-lg text-sm font-bold"
                 >
                   Join Pool
                 </Link>

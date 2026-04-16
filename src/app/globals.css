@@ -28,16 +28,6 @@
   --color-t-highlight: var(--t-highlight);
   --color-t-sky: var(--t-sky);
 
-  /* Keep legacy aliases so existing classes still work during migration */
-  --color-masters-green: var(--t-primary);
-  --color-masters-green-dark: var(--t-primary-dark);
-  --color-masters-green-light: var(--t-primary-light);
-  --color-masters-yellow: var(--t-accent);
-  --color-masters-gold: var(--t-accent-muted);
-  --color-masters-cream: var(--t-cream);
-  --color-masters-azalea: var(--t-highlight);
-  --color-masters-sky: var(--t-sky);
-
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --font-sans: var(--font-geist-sans);
@@ -130,8 +120,8 @@ body {
   opacity: 0.6;
 }
 
-/* Green Jacket pattern (for header decoration) */
-.green-pattern {
+/* Subtle diagonal stripe pattern for hero/header sections */
+.hero-pattern {
   background-image: repeating-linear-gradient(
     45deg,
     transparent,
@@ -178,4 +168,14 @@ body {
 /* Button press feedback */
 .btn-press:active {
   transform: scale(0.97);
+}
+
+/* Accessibility: respect reduced motion preferences */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
 }

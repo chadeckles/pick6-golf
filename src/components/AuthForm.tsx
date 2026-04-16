@@ -52,7 +52,7 @@ export default function AuthForm({ mode }: { mode: "login" | "register" }) {
       <div className="bg-white rounded-xl shadow-lg p-8 w-full max-w-md">
         {/* Header */}
         <div className="text-center mb-8">
-          <div className="w-16 h-16 bg-masters-green rounded-full flex items-center justify-center mx-auto mb-4">
+          <div className="w-16 h-16 bg-t-primary rounded-full flex items-center justify-center mx-auto mb-4">
             <span className="text-3xl">⛳</span>
           </div>
           <h2 className="text-2xl font-bold text-gray-900">
@@ -85,7 +85,7 @@ export default function AuthForm({ mode }: { mode: "login" | "register" }) {
                 value={name}
                 onChange={(e) => setName(e.target.value)}
                 placeholder="Tiger Woods"
-                className="w-full border border-gray-300 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-masters-green focus:border-transparent"
+                className="w-full border border-gray-300 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-t-primary focus:border-transparent"
               />
             </div>
           )}
@@ -100,7 +100,7 @@ export default function AuthForm({ mode }: { mode: "login" | "register" }) {
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               placeholder="you@example.com"
-              className="w-full border border-gray-300 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-masters-green focus:border-transparent"
+              className="w-full border border-gray-300 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-t-primary focus:border-transparent"
             />
           </div>
 
@@ -115,14 +115,14 @@ export default function AuthForm({ mode }: { mode: "login" | "register" }) {
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               placeholder="At least 6 characters"
-              className="w-full border border-gray-300 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-masters-green focus:border-transparent"
+              className="w-full border border-gray-300 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-t-primary focus:border-transparent"
             />
           </div>
 
           <button
             type="submit"
             disabled={loading}
-            className="w-full bg-masters-green text-white py-3 rounded-lg font-bold text-lg hover:bg-masters-green-dark transition-colors disabled:opacity-50 shadow-md"
+            className="w-full bg-t-primary text-white py-3 rounded-lg font-bold text-lg hover:bg-t-primary-dark transition-colors disabled:opacity-50 shadow-md"
           >
             {loading
               ? "Please wait..."
@@ -139,7 +139,7 @@ export default function AuthForm({ mode }: { mode: "login" | "register" }) {
               Already have an account?{" "}
               <Link
                 href="/login"
-                className="text-masters-green font-medium hover:underline"
+                className="text-t-primary font-medium hover:underline"
               >
                 Sign in
               </Link>
@@ -149,7 +149,7 @@ export default function AuthForm({ mode }: { mode: "login" | "register" }) {
               Don&apos;t have an account?{" "}
               <Link
                 href="/register"
-                className="text-masters-green font-medium hover:underline"
+                className="text-t-primary font-medium hover:underline"
               >
                 Register
               </Link>

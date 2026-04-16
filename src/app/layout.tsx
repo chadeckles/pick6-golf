@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import Header from "@/components/Header";
+import Footer from "@/components/Footer";
 import { TournamentProvider } from "@/components/TournamentProvider";
 import { CURRENT_YEAR } from "@/lib/constants";
 
@@ -36,12 +37,7 @@ export default function RootLayout({
         <TournamentProvider>
           <Header />
           <main className="flex-1">{children}</main>
-          <footer className="bg-masters-green-dark text-white/50 py-6">
-            <div className="max-w-5xl mx-auto px-4 flex flex-col sm:flex-row items-center justify-between gap-2 text-xs">
-              <p>Pick Six Golf © {CURRENT_YEAR}</p>
-              <p>Live scoring powered by ESPN • Rankings via OWGR</p>
-            </div>
-          </footer>
+          <Footer />
         </TournamentProvider>
       </body>
     </html>

@@ -14,6 +14,7 @@ import {
   CheckIcon,
 } from "@/components/Icons";
 import { useTournament } from "@/components/TournamentProvider";
+import TournamentBar from "@/components/TournamentBar";
 
 interface PoolInfo {
   id: string;
@@ -37,7 +38,7 @@ interface UserPick {
 
 export default function DashboardPage() {
   const router = useRouter();
-  const { tournament, setTournament } = useTournament();
+  const { tournament } = useTournament();
   const [user, setUser] = useState<{ userId: string; name: string } | null>(null);
   const [pool, setPool] = useState<PoolInfo | null>(null);
   const [picks, setPicks] = useState<UserPick[]>([]);
@@ -71,10 +72,6 @@ export default function DashboardPage() {
         setPaymentLink(poolData.pool.paymentLink || "");
         setPaymentLabel(poolData.pool.paymentLabel || "Pay Entry Fee");
         setEntryFee(poolData.pool.entryFee || "");
-        // Auto-switch tournament context to match the pool's tournament
-        if (poolData.pool.tournamentSlug) {
-          setTournament(poolData.pool.tournamentSlug);
-        }
         // Format lock date for datetime-local input
         const ld = new Date(poolData.pool.lockDate);
         setLockDateInput(ld.toISOString().slice(0, 16));
@@ -92,7 +89,7 @@ export default function DashboardPage() {
   useEffect(() => {
     fetchAll();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [tournament.slug]);
 
   async function savePaymentSettings() {
     try {
@@ -151,6 +148,8 @@ export default function DashboardPage() {
   const isLocked = pool ? new Date(pool.lockDate) <= new Date() : false;
 
   return (
+    <>
+    <TournamentBar />
     <div className="max-w-6xl mx-auto px-4 py-8 space-y-8">
       {/* Welcome banner */}
       <div className="bg-white rounded-xl shadow-md p-6">
@@ -170,14 +169,14 @@ export default function DashboardPage() {
               {!isLocked && (
                 <Link
                   href="/picks"
-                  className="bg-masters-green text-white px-5 py-2 rounded-lg font-bold text-sm hover:bg-masters-green-dark transition-colors"
+                  className="bg-t-primary text-white px-5 py-2 rounded-lg font-bold text-sm hover:bg-t-primary-dark transition-colors"
                 >
                   {picks.length > 0 ? "Edit Picks" : "Make Picks"}
                 </Link>
               )}
               <Link
                 href="/leaderboard"
-                className="bg-masters-cream text-masters-green px-5 py-2 rounded-lg font-bold text-sm hover:bg-masters-yellow/30 transition-colors border border-masters-green/20"
+                className="bg-t-cream text-t-primary px-5 py-2 rounded-lg font-bold text-sm hover:bg-t-accent/30 transition-colors border border-t-primary/20"
               >
                 Leaderboard
               </Link>
@@ -195,7 +194,7 @@ export default function DashboardPage() {
           <div className="space-y-6">
             {/* Pool card */}
             <div className="bg-white rounded-xl shadow-md overflow-hidden">
-              <div className="bg-masters-green px-6 py-3">
+              <div className="bg-t-primary px-6 py-3">
                 <h3 className="text-white font-bold">Pool Details</h3>
               </div>
               <div className="p-6 space-y-4">
@@ -204,7 +203,7 @@ export default function DashboardPage() {
                     Invite Code
                   </span>
                   <div className="flex items-center gap-2 mt-1">
-                    <code className="bg-masters-cream px-3 py-1 rounded font-mono font-bold text-masters-green text-lg tracking-widest">
+                    <code className="bg-t-cream px-3 py-1 rounded font-mono font-bold text-t-primary text-lg tracking-widest">
                       {pool.inviteCode}
                     </code>
                     <button
@@ -229,12 +228,12 @@ export default function DashboardPage() {
                         key={m.id}
                         className="flex items-center gap-2 text-sm"
                       >
-                        <div className="w-6 h-6 bg-masters-green/10 rounded-full flex items-center justify-center text-xs font-bold text-masters-green">
+                        <div className="w-6 h-6 bg-t-primary/10 rounded-full flex items-center justify-center text-xs font-bold text-t-primary">
                           {m.name.charAt(0)}
                         </div>
                         <span className="text-gray-700 flex-1">{m.name}</span>
                         {m.id === pool.adminUserId && (
-                          <span className="text-xs bg-masters-yellow/30 text-masters-gold px-1.5 py-0.5 rounded font-bold">
+                          <span className="text-xs bg-t-accent/30 text-t-accent-muted px-1.5 py-0.5 rounded font-bold">
                             Admin
                           </span>
                         )}
@@ -281,7 +280,7 @@ export default function DashboardPage() {
                       href={pool.paymentLink}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="block w-full text-center bg-masters-green text-white px-4 py-2.5 rounded-lg font-bold text-sm hover:bg-masters-green-dark transition-colors"
+                      className="block w-full text-center bg-t-primary text-white px-4 py-2.5 rounded-lg font-bold text-sm hover:bg-t-primary-dark transition-colors"
                     >
                       <DollarIcon className="w-4 h-4 inline-block mr-1" /> {pool.paymentLabel}
                     </a>
@@ -294,7 +293,7 @@ export default function DashboardPage() {
                     {!showPaymentSetup ? (
                       <button
                         onClick={() => setShowPaymentSetup(true)}
-                        className="text-sm text-masters-green font-bold hover:underline flex items-center gap-1"
+                        className="text-sm text-t-primary font-bold hover:underline flex items-center gap-1"
                       >
                         <GearIcon className="w-4 h-4" /> {pool.paymentLink ? "Edit Payment Settings" : "Set Up Payment Link"}
                       </button>
@@ -309,7 +308,7 @@ export default function DashboardPage() {
                             value={entryFee}
                             onChange={(e) => setEntryFee(e.target.value)}
                             placeholder="$20"
-                            className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-masters-green focus:border-transparent"
+                            className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-t-primary focus:border-transparent"
                           />
                         </div>
                         <div>
@@ -321,7 +320,7 @@ export default function DashboardPage() {
                             value={paymentLink}
                             onChange={(e) => setPaymentLink(e.target.value)}
                             placeholder="https://venmo.com/yourname"
-                            className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-masters-green focus:border-transparent"
+                            className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-t-primary focus:border-transparent"
                           />
                         </div>
                         <div>
@@ -333,13 +332,13 @@ export default function DashboardPage() {
                             value={paymentLabel}
                             onChange={(e) => setPaymentLabel(e.target.value)}
                             placeholder="Pay via Venmo"
-                            className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-masters-green focus:border-transparent"
+                            className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-t-primary focus:border-transparent"
                           />
                         </div>
                         <div className="flex gap-2">
                           <button
                             onClick={savePaymentSettings}
-                            className="flex-1 bg-masters-green text-white px-3 py-2 rounded-lg text-sm font-bold hover:bg-masters-green-dark transition-colors"
+                            className="flex-1 bg-t-primary text-white px-3 py-2 rounded-lg text-sm font-bold hover:bg-t-primary-dark transition-colors"
                           >
                             Save
                           </button>
@@ -370,7 +369,7 @@ export default function DashboardPage() {
                         {user?.userId === pool.adminUserId && (
                           <button
                             onClick={() => setEditingLockDate(true)}
-                            className="text-xs text-masters-green hover:underline"
+                            className="text-xs text-t-primary hover:underline"
                           >
                             Edit
                           </button>
@@ -386,7 +385,7 @@ export default function DashboardPage() {
                         />
                         <button
                           onClick={saveLockDate}
-                          className="text-xs bg-masters-green text-white px-2 py-1 rounded font-bold"
+                          className="text-xs bg-t-primary text-white px-2 py-1 rounded font-bold"
                         >
                           Save
                         </button>
@@ -405,9 +404,9 @@ export default function DashboardPage() {
 
             {/* My picks summary */}
             <div className="bg-white rounded-xl shadow-md overflow-hidden">
-              <div className="bg-masters-green px-6 py-3 flex items-center justify-between">
+              <div className="bg-t-primary px-6 py-3 flex items-center justify-between">
                 <h3 className="text-white font-bold">My Picks</h3>
-                <span className="text-masters-yellow text-xs font-bold">
+                <span className="text-t-accent text-xs font-bold">
                   {picks.length}/6
                 </span>
               </div>
@@ -420,7 +419,7 @@ export default function DashboardPage() {
                     {!isLocked && (
                       <Link
                         href="/picks"
-                        className="text-masters-green font-bold text-sm hover:underline"
+                        className="text-t-primary font-bold text-sm hover:underline"
                       >
                         Make your picks →
                       </Link>
@@ -454,5 +453,6 @@ export default function DashboardPage() {
         </div>
       )}
     </div>
+    </>
   );
 }
