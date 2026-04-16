@@ -111,12 +111,20 @@ export default function AuthForm({ mode }: { mode: "login" | "register" }) {
             <input
               type="password"
               required
-              minLength={6}
+              minLength={mode === "register" ? 10 : 1}
+              maxLength={128}
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              placeholder="At least 6 characters"
+              placeholder={mode === "register" ? "At least 10 characters" : "Your password"}
               className="w-full border border-gray-300 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-t-primary focus:border-transparent"
             />
+            {mode === "login" && (
+              <div className="text-right mt-1">
+                <Link href="/forgot" className="text-xs text-t-primary hover:underline">
+                  Forgot password?
+                </Link>
+              </div>
+            )}
           </div>
 
           <button

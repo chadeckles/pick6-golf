@@ -53,6 +53,13 @@ export default function DashboardPage() {
   const [lockDateInput, setLockDateInput] = useState("");
   const [showCreateJoin, setShowCreateJoin] = useState(false);
 
+  // Admin actions
+  const [transferTo, setTransferTo] = useState("");
+  const [leaveTransferTo, setLeaveTransferTo] = useState("");
+  const [confirmLeave, setConfirmLeave] = useState(false);
+  const [actionBusy, setActionBusy] = useState(false);
+  const [actionError, setActionError] = useState("");
+
   // Derive active pool from state
   const pool = pools.find((p) => p.id === activePoolId) || null;
 
@@ -144,6 +151,99 @@ export default function DashboardPage() {
       fetchAll();
     } catch (err) {
       console.error("Failed to save lock date:", err);
+    }
+  }
+
+  async function handleTransferAdmin() {
+    if (!pool || !transferTo) return;
+    setActionBusy(true);
+    setActionError("");
+    try {
+      const res = await fetch("/api/pool/transfer", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ poolId: pool.id, newAdminUserId: transferTo }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        setActionError(data.error ?? "Failed to transfer admin");
+        return;
+      }
+      setTransferTo("");
+      fetchAll();
+    } catch {
+      setActionError("Network error");
+    } finally {
+      setActionBusy(false);
+    }
+  }
+
+  async function handleRemoveMember(memberId: string, memberName: string) {
+    if (!pool) return;
+    if (!confirm(`Remove ${memberName} from ${pool.name}? Their picks will be wiped.`)) return;
+    setActionBusy(true);
+    setActionError("");
+    try {
+      const res = await fetch("/api/pool/member", {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ poolId: pool.id, userId: memberId }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        setActionError(data.error ?? "Failed to remove member");
+        return;
+      }
+      fetchAll();
+    } catch {
+      setActionError("Network error");
+    } finally {
+      setActionBusy(false);
+    }
+  }
+
+  async function handleLeavePool() {
+    if (!pool) return;
+    const isAdmin = user?.userId === pool.adminUserId;
+    const otherMembers = pool.members.filter((m) => m.id !== user?.userId);
+    const needsTransfer = isAdmin && otherMembers.length > 0;
+
+    if (needsTransfer && !leaveTransferTo) {
+      setActionError("Choose a member to transfer admin to before leaving.");
+      return;
+    }
+
+    const msg =
+      otherMembers.length === 0
+        ? `You're the only member of ${pool.name}. Leaving will DELETE the pool and all its data. Continue?`
+        : `Leave ${pool.name}? Your picks for this pool will be removed.`;
+    if (!confirm(msg)) return;
+
+    setActionBusy(true);
+    setActionError("");
+    try {
+      const res = await fetch("/api/pool/leave", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          poolId: pool.id,
+          ...(needsTransfer ? { transferToUserId: leaveTransferTo } : {}),
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        setActionError(data.error ?? "Failed to leave pool");
+        return;
+      }
+      // Reset active pool so we don't try to render a stale one
+      setActivePoolId(null);
+      setLeaveTransferTo("");
+      setConfirmLeave(false);
+      fetchAll();
+    } catch {
+      setActionError("Network error");
+    } finally {
+      setActionBusy(false);
     }
   }
 
@@ -339,6 +439,19 @@ export default function DashboardPage() {
                             </span>
                           )
                         )}
+                        {/* Admin kick button (pre-lock only, can't kick self) */}
+                        {user?.userId === pool.adminUserId &&
+                          m.id !== user?.userId &&
+                          !isLocked && (
+                            <button
+                              onClick={() => handleRemoveMember(m.id, m.name)}
+                              disabled={actionBusy}
+                              className="text-xs text-gray-400 hover:text-red-600 hover:bg-red-50 rounded px-1.5 py-0.5 font-bold transition-colors disabled:opacity-50"
+                              title={`Remove ${m.name} from pool`}
+                            >
+                              ✕
+                            </button>
+                          )}
                       </div>
                     ))}
                   </div>
@@ -475,6 +588,98 @@ export default function DashboardPage() {
                       </div>
                     )}
                   </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Danger zone — transfer admin + leave pool */}
+            <div className="bg-white rounded-xl shadow-md overflow-hidden border border-red-100">
+              <div className="bg-red-50 px-6 py-3 border-b border-red-100">
+                <h3 className="text-red-700 font-bold text-sm">Danger Zone</h3>
+              </div>
+              <div className="p-6 space-y-4 text-sm">
+                {actionError && (
+                  <div className="bg-red-50 text-red-700 border border-red-200 px-3 py-2 rounded text-xs">
+                    {actionError}
+                  </div>
+                )}
+
+                {/* Transfer admin — admin only, while >1 member */}
+                {user?.userId === pool.adminUserId && pool.members.length > 1 && (
+                  <div>
+                    <label className="text-xs text-gray-500 uppercase font-bold tracking-wider block mb-1">
+                      Transfer Admin
+                    </label>
+                    <p className="text-xs text-gray-500 mb-2">
+                      Hand off pool-admin rights to another member. You&apos;ll remain in the pool.
+                    </p>
+                    <div className="flex gap-2">
+                      <select
+                        value={transferTo}
+                        onChange={(e) => setTransferTo(e.target.value)}
+                        className="flex-1 border border-gray-300 rounded px-2 py-1.5 text-sm focus:ring-2 focus:ring-t-primary focus:border-transparent"
+                      >
+                        <option value="">Choose a member…</option>
+                        {pool.members
+                          .filter((m) => m.id !== user?.userId)
+                          .map((m) => (
+                            <option key={m.id} value={m.id}>
+                              {m.name}
+                            </option>
+                          ))}
+                      </select>
+                      <button
+                        onClick={handleTransferAdmin}
+                        disabled={!transferTo || actionBusy}
+                        className="bg-gray-700 text-white px-3 py-1.5 rounded text-xs font-bold hover:bg-gray-800 disabled:opacity-50 transition-colors"
+                      >
+                        Transfer
+                      </button>
+                    </div>
+                  </div>
+                )}
+
+                {/* Leave pool */}
+                <div>
+                  <label className="text-xs text-gray-500 uppercase font-bold tracking-wider block mb-1">
+                    Leave Pool
+                  </label>
+                  <p className="text-xs text-gray-500 mb-2">
+                    {pool.members.length === 1
+                      ? "You're the only member — leaving will delete this pool permanently."
+                      : "Your picks for this pool will be removed."}
+                  </p>
+
+                  {/* Admin with other members must pick a successor */}
+                  {user?.userId === pool.adminUserId && pool.members.length > 1 && (
+                    <select
+                      value={leaveTransferTo}
+                      onChange={(e) => setLeaveTransferTo(e.target.value)}
+                      className="w-full border border-gray-300 rounded px-2 py-1.5 text-sm mb-2 focus:ring-2 focus:ring-t-primary focus:border-transparent"
+                    >
+                      <option value="">Transfer admin to…</option>
+                      {pool.members
+                        .filter((m) => m.id !== user?.userId)
+                        .map((m) => (
+                          <option key={m.id} value={m.id}>
+                            {m.name}
+                          </option>
+                        ))}
+                    </select>
+                  )}
+
+                  <button
+                    onClick={handleLeavePool}
+                    disabled={
+                      actionBusy ||
+                      (user?.userId === pool.adminUserId &&
+                        pool.members.length > 1 &&
+                        !leaveTransferTo)
+                    }
+                    className="w-full bg-red-600 text-white px-3 py-2 rounded text-sm font-bold hover:bg-red-700 disabled:opacity-50 transition-colors"
+                  >
+                    {pool.members.length === 1 ? "Delete Pool" : "Leave Pool"}
+                  </button>
                 </div>
               </div>
             </div>

@@ -1,0 +1,102 @@
+name: Nightly DB backup
+
+# ──────────────────────────────────────────────────────────────────────
+# Hits the live app's /api/admin/backup endpoint every night, downloads
+# the gzipped SQLite snapshot, and uploads it as a private GitHub Actions
+# artifact with 14-day retention.
+#
+# ── Required repo secrets (Settings → Secrets and variables → Actions) ─
+#   APP_URL          e.g. https://your-domain.com   (no trailing slash)
+#   BACKUP_API_KEY   long random string, same value as your app's env var
+#
+# ── Testing manually ───────────────────────────────────────────────────
+# Actions tab → "Nightly DB backup" → Run workflow.
+#
+# ── Restoring ──────────────────────────────────────────────────────────
+#   1. Open the workflow run, download the "mp6-db-backup" artifact (a zip).
+#   2. Unzip → you'll get mp6-YYYY-MM-DD...db.gz
+#   3. gunzip mp6-*.db.gz
+#   4. Stop the Railway service (or scale to 0 instances).
+#   5. Replace the .db file on the volume with the restored snapshot.
+#   6. Start the service again.
+# ──────────────────────────────────────────────────────────────────────
+
+on:
+  schedule:
+    # 07:15 UTC = 02:15 America/New_York (EST) / 03:15 EDT.
+    # Running in the middle of the night minimises contention with users.
+    - cron: "15 7 * * *"
+  workflow_dispatch: {}
+
+permissions:
+  contents: read
+
+concurrency:
+  group: backup
+  cancel-in-progress: false
+
+jobs:
+  backup:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Guard against missing secrets
+        env:
+          APP_URL: ${{ secrets.APP_URL }}
+          BACKUP_API_KEY: ${{ secrets.BACKUP_API_KEY }}
+        run: |
+          if [ -z "$APP_URL" ] || [ -z "$BACKUP_API_KEY" ]; then
+            echo "::error::APP_URL and BACKUP_API_KEY must both be set as repo secrets."
+            exit 1
+          fi
+
+      - name: Download snapshot
+        env:
+          APP_URL: ${{ secrets.APP_URL }}
+          BACKUP_API_KEY: ${{ secrets.BACKUP_API_KEY }}
+        run: |
+          set -euo pipefail
+          STAMP=$(date -u +"%Y-%m-%d_%H-%M-%S")
+          OUT="mp6-${STAMP}.db.gz"
+          echo "Fetching backup → ${OUT}"
+          # --fail: non-2xx becomes a non-zero exit
+          # --silent + --show-error: quiet on success, loud on failure
+          # --retry: survive a transient blip
+          HTTP_CODE=$(curl \
+              --fail \
+              --silent \
+              --show-error \
+              --retry 3 \
+              --retry-delay 10 \
+              --max-time 300 \
+              --write-out "%{http_code}" \
+              --output "$OUT" \
+              --header "Authorization: Bearer ${BACKUP_API_KEY}" \
+              "${APP_URL}/api/admin/backup")
+          echo "HTTP status: $HTTP_CODE"
+
+          # Sanity-check: a valid gzip starts with 1f 8b
+          HEADER=$(xxd -l 2 -p "$OUT")
+          if [ "$HEADER" != "1f8b" ]; then
+            echo "::error::Downloaded file is not gzip (header=$HEADER). Aborting."
+            head -c 500 "$OUT" || true
+            exit 1
+          fi
+
+          SIZE=$(stat -c%s "$OUT")
+          echo "Snapshot size: ${SIZE} bytes"
+          if [ "$SIZE" -lt 1024 ]; then
+            echo "::warning::Snapshot is suspiciously small (<1KB)."
+          fi
+
+          # Expose for the next step
+          echo "BACKUP_FILE=${OUT}" >> "$GITHUB_ENV"
+
+      - name: Upload as workflow artifact (14-day retention)
+        uses: actions/upload-artifact@v4
+        with:
+          name: mp6-db-backup-${{ github.run_number }}
+          path: ${{ env.BACKUP_FILE }}
+          retention-days: 14
+          if-no-files-found: error
+          compression-level: 0  # already gzipped — skip re-compression

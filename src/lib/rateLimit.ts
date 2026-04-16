@@ -1,34 +1,81 @@
 /**
- * Simple in-memory rate limiter for auth endpoints.
- * Tracks attempts per IP with a sliding window.
+ * Simple in-memory rate limiter with per-key sliding windows.
+ *
+ * IMPORTANT: state is per-Node-process. That's acceptable for a small (<100
+ * user) deployment behind a single Railway container. If you ever scale
+ * horizontally, swap this for Upstash Redis or Postgres-backed throttling.
+ *
+ * Use the tightest bucket that still works for humans:
+ *   - `authIpLimit(ip)`        — per-IP, generous (accounts for NAT'd families)
+ *   - `authEmailLimit(email)`  — per-email, TIGHT (thwarts credential stuffing
+ *                                 even when attackers rotate IPs)
+ *   - `resetIpLimit(ip)`       — per-IP, one-hour window for reset requests
  */
 
-const attempts = new Map<string, { count: number; resetAt: number }>();
-
-const WINDOW_MS = 15 * 60 * 1000; // 15 minutes
-const MAX_ATTEMPTS = 15; // max attempts per window
-
-export function checkRateLimit(ip: string): { allowed: boolean; remaining: number } {
-  const now = Date.now();
-  const entry = attempts.get(ip);
-
-  if (!entry || now > entry.resetAt) {
-    attempts.set(ip, { count: 1, resetAt: now + WINDOW_MS });
-    return { allowed: true, remaining: MAX_ATTEMPTS - 1 };
-  }
-
-  if (entry.count >= MAX_ATTEMPTS) {
-    return { allowed: false, remaining: 0 };
-  }
-
-  entry.count++;
-  return { allowed: true, remaining: MAX_ATTEMPTS - entry.count };
+interface Bucket {
+  count: number;
+  resetAt: number;
 }
 
-// Clean up stale entries periodically
+const buckets = new Map<string, Bucket>();
+
+export interface RateLimitResult {
+  allowed: boolean;
+  remaining: number;
+  /** seconds until the window resets (>=1) when blocked, else 0 */
+  retryAfter: number;
+}
+
+export function rateLimit(
+  key: string,
+  opts: { max: number; windowMs: number }
+): RateLimitResult {
+  const now = Date.now();
+  const b = buckets.get(key);
+
+  if (!b || now > b.resetAt) {
+    buckets.set(key, { count: 1, resetAt: now + opts.windowMs });
+    return { allowed: true, remaining: opts.max - 1, retryAfter: 0 };
+  }
+
+  if (b.count >= opts.max) {
+    return {
+      allowed: false,
+      remaining: 0,
+      retryAfter: Math.max(1, Math.ceil((b.resetAt - now) / 1000)),
+    };
+  }
+
+  b.count++;
+  return { allowed: true, remaining: opts.max - b.count, retryAfter: 0 };
+}
+
+export function authIpLimit(ip: string): RateLimitResult {
+  return rateLimit(`authIp:${ip}`, { max: 30, windowMs: 15 * 60 * 1000 });
+}
+
+export function authEmailLimit(email: string): RateLimitResult {
+  return rateLimit(`authEmail:${email.toLowerCase()}`, {
+    max: 8,
+    windowMs: 15 * 60 * 1000,
+  });
+}
+
+export function resetIpLimit(ip: string): RateLimitResult {
+  return rateLimit(`reset:${ip}`, { max: 10, windowMs: 60 * 60 * 1000 });
+}
+
+// Legacy export (kept so existing imports keep building; new code should use
+// authIpLimit/authEmailLimit directly).
+export function checkRateLimit(ip: string): { allowed: boolean; remaining: number } {
+  const r = authIpLimit(ip);
+  return { allowed: r.allowed, remaining: r.remaining };
+}
+
+// Periodic cleanup so the map doesn't grow unbounded.
 setInterval(() => {
   const now = Date.now();
-  for (const [ip, entry] of attempts) {
-    if (now > entry.resetAt) attempts.delete(ip);
+  for (const [k, v] of buckets) {
+    if (now > v.resetAt) buckets.delete(k);
   }
-}, 60_000);
+}, 60_000).unref?.();

@@ -202,6 +202,13 @@ export default function Header() {
                         >
                           <TargetIcon className="w-4 h-4" /> My Picks
                         </Link>
+                        <Link
+                          href="/account"
+                          onClick={() => setMenuOpen(false)}
+                          className="flex items-center gap-2 px-4 py-2 text-sm text-gray-700 hover:bg-t-cream transition-colors border-t border-gray-100 mt-1 pt-2"
+                        >
+                          ⚙️ Account Settings
+                        </Link>
                         <button
                           onClick={handleLogout}
                           className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 transition-colors"
@@ -269,6 +276,12 @@ export default function Header() {
                   className="flex items-center gap-2 px-4 py-2 text-sm text-white/80 hover:text-white hover:bg-white/10 rounded-lg"
                 >
                   <TargetIcon className="w-4 h-4" /> My Picks
+                </Link>
+                <Link
+                  href="/account"
+                  className="flex items-center gap-2 px-4 py-2 text-sm text-white/80 hover:text-white hover:bg-white/10 rounded-lg"
+                >
+                  ⚙️ Account
                 </Link>
                 <button
                   onClick={handleLogout}

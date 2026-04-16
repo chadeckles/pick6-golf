@@ -1,22 +1,26 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getDb } from "@/lib/db";
 import { getSession } from "@/lib/auth";
+import { checkOrigin, getClientIp } from "@/lib/security";
+import { audit } from "@/lib/audit";
 
 export async function POST(req: NextRequest) {
+  const originError = checkOrigin(req);
+  if (originError) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+
   const session = await getSession();
   if (!session) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
   try {
-    const { inviteCode } = await req.json();
+    const body = await req.json().catch(() => null);
+    const rawCode = body && typeof body === "object" ? (body as Record<string, unknown>).inviteCode : null;
 
-    if (!inviteCode) {
-      return NextResponse.json(
-        { error: "Invite code is required" },
-        { status: 400 }
-      );
+    if (typeof rawCode !== "string" || rawCode.trim().length === 0 || rawCode.length > 32) {
+      return NextResponse.json({ error: "Invite code is required" }, { status: 400 });
     }
+    const inviteCode = rawCode.trim().toUpperCase();
 
     const db = getDb();
 
@@ -59,6 +63,15 @@ export async function POST(req: NextRequest) {
       pool.id,
       session.userId
     );
+
+    audit({
+      actorUserId: session.userId,
+      action: "pool.join",
+      targetType: "pool",
+      targetId: pool.id,
+      poolId: pool.id,
+      ip: getClientIp(req),
+    });
 
     return NextResponse.json({ poolId: pool.id, poolName: pool.name });
   } catch (err) {

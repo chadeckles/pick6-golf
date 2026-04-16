@@ -91,6 +91,44 @@ function initSchema(db: Database.Database) {
   if (!poolColNames.has("tournament_slug")) {
     db.exec("ALTER TABLE pools ADD COLUMN tournament_slug TEXT DEFAULT 'masters'");
   }
+  // Migrate: store the ORIGINAL lock_date so admins can't push it forward
+  // after the tournament starts. Backfilled from the current lock_date.
+  if (!poolColNames.has("original_lock_date")) {
+    db.exec("ALTER TABLE pools ADD COLUMN original_lock_date TEXT");
+    db.exec("UPDATE pools SET original_lock_date = lock_date WHERE original_lock_date IS NULL");
+  }
+
+  // Password reset tokens (short-lived, single-use)
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS password_reset_tokens (
+      token_hash TEXT PRIMARY KEY,
+      user_id TEXT NOT NULL,
+      expires_at TEXT NOT NULL,
+      used_at TEXT,
+      created_at TEXT NOT NULL DEFAULT (datetime('now')),
+      FOREIGN KEY (user_id) REFERENCES users(id)
+    );
+    CREATE INDEX IF NOT EXISTS idx_reset_tokens_user ON password_reset_tokens(user_id);
+  `);
+
+  // Audit log for anything that could be disputed (picks, pool settings, payments)
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS audit_log (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      actor_user_id TEXT,
+      action TEXT NOT NULL,
+      target_type TEXT NOT NULL,
+      target_id TEXT,
+      pool_id TEXT,
+      before_json TEXT,
+      after_json TEXT,
+      ip TEXT,
+      created_at TEXT NOT NULL DEFAULT (datetime('now'))
+    );
+    CREATE INDEX IF NOT EXISTS idx_audit_actor ON audit_log(actor_user_id);
+    CREATE INDEX IF NOT EXISTS idx_audit_pool ON audit_log(pool_id);
+    CREATE INDEX IF NOT EXISTS idx_audit_created ON audit_log(created_at);
+  `);
 
   // Migrate: add pool_members junction table for multi-pool support
   db.exec(`

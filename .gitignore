@@ -32,6 +32,7 @@ yarn-error.log*
 
 # env files (can opt-in for committing if needed)
 .env*
+!.env.example
 
 # vercel
 .vercel
@@ -44,6 +45,9 @@ next-env.d.ts
 *.db
 *.db-wal
 *.db-shm
+
+# Local backup snapshots (scripts/backup.js output)
+/backups/
 
 # Generated from tournaments.yaml
 src/lib/tournaments/schedule.json

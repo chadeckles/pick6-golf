@@ -1,67 +1,68 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getDb } from "@/lib/db";
 import { createSession } from "@/lib/auth";
-import { hashSync } from "bcryptjs";
+import { hash } from "bcryptjs";
 import { v4 as uuid } from "uuid";
-import { checkRateLimit } from "@/lib/rateLimit";
+import { authIpLimit } from "@/lib/rateLimit";
+import {
+  assertStringField,
+  checkOrigin,
+  getClientIp,
+  normalizeEmail,
+  validatePassword,
+} from "@/lib/security";
+import { audit } from "@/lib/audit";
 
 export async function POST(req: NextRequest) {
+  const originError = checkOrigin(req);
+  if (originError) {
+    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  }
+
   try {
-    // Rate limit by IP
-    const ip = req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || "unknown";
-    const { allowed, remaining } = checkRateLimit(ip);
-    if (!allowed) {
+    const ip = getClientIp(req);
+    const ipLimit = authIpLimit(ip);
+    if (!ipLimit.allowed) {
       return NextResponse.json(
         { error: "Too many attempts. Please try again later." },
-        { status: 429, headers: { "Retry-After": "900", "X-RateLimit-Remaining": String(remaining) } }
+        {
+          status: 429,
+          headers: {
+            "Retry-After": String(ipLimit.retryAfter),
+            "X-RateLimit-Remaining": "0",
+          },
+        }
       );
     }
 
-    const { name, email, password } = await req.json();
+    const body = await req.json().catch(() => null);
+    if (!body || typeof body !== "object") {
+      return NextResponse.json({ error: "Invalid request" }, { status: 400 });
+    }
+    const { name: rawName, email: rawEmail, password: rawPassword } = body as Record<string, unknown>;
 
-    if (!name || !email || !password) {
-      return NextResponse.json(
-        { error: "Name, email, and password are required" },
-        { status: 400 }
-      );
+    const nameErr = assertStringField(rawName, "Name", { min: 1, max: 50, required: true });
+    if (nameErr) return NextResponse.json({ error: nameErr }, { status: 400 });
+
+    const email = normalizeEmail(rawEmail);
+    if (!email) {
+      return NextResponse.json({ error: "Invalid email format" }, { status: 400 });
     }
 
-    // Input length limits
-    if (name.length > 50 || email.length > 100 || password.length > 128) {
-      return NextResponse.json(
-        { error: "Input too long" },
-        { status: 400 }
-      );
-    }
+    const pwErr = validatePassword(rawPassword);
+    if (pwErr) return NextResponse.json({ error: pwErr }, { status: 400 });
 
-    // Email format validation
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(email)) {
-      return NextResponse.json(
-        { error: "Invalid email format" },
-        { status: 400 }
-      );
-    }
-
-    if (password.length < 6) {
-      return NextResponse.json(
-        { error: "Password must be at least 6 characters" },
-        { status: 400 }
-      );
-    }
-
-    // Sanitize name — strip HTML tags
-    const cleanName = name.replace(/<[^>]*>/g, "").trim();
+    // React escapes output; we just trim whitespace here. Keeping this simple
+    // is safer than ad-hoc regex scrubbing that misses edge cases.
+    const cleanName = (rawName as string).trim();
     if (!cleanName) {
-      return NextResponse.json(
-        { error: "Name is required" },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: "Name is required" }, { status: 400 });
     }
 
     const db = getDb();
 
-    // Check if email exists
+    // Lowercase-compare for both the existence check AND the insert to avoid
+    // race-conditions against the UNIQUE(email) index producing a 500.
     const existing = db
       .prepare("SELECT id FROM users WHERE email = ?")
       .get(email);
@@ -73,15 +74,35 @@ export async function POST(req: NextRequest) {
     }
 
     const id = uuid();
-    const passwordHash = hashSync(password, 12);
+    const passwordHash = await hash(rawPassword as string, 12);
 
-    db.prepare(
-      "INSERT INTO users (id, name, email, password_hash) VALUES (?, ?, ?, ?)"
-    ).run(id, cleanName, email.toLowerCase(), passwordHash);
+    try {
+      db.prepare(
+        "INSERT INTO users (id, name, email, password_hash) VALUES (?, ?, ?, ?)"
+      ).run(id, cleanName, email, passwordHash);
+    } catch (err) {
+      // Likely UNIQUE collision between the check and the insert. Treat as 409.
+      const msg = err instanceof Error ? err.message : String(err);
+      if (msg.includes("UNIQUE") || msg.includes("constraint")) {
+        return NextResponse.json(
+          { error: "Email already registered" },
+          { status: 409 }
+        );
+      }
+      throw err;
+    }
 
-    await createSession({ userId: id, name: cleanName, email: email.toLowerCase() });
+    audit({
+      actorUserId: id,
+      action: "user.register",
+      targetType: "user",
+      targetId: id,
+      ip,
+    });
 
-    return NextResponse.json({ id, name: cleanName, email: email.toLowerCase() });
+    await createSession({ userId: id, name: cleanName, email });
+
+    return NextResponse.json({ id, name: cleanName, email });
   } catch (err) {
     console.error("Register error:", err);
     return NextResponse.json(
