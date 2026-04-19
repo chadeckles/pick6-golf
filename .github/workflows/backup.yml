@@ -60,13 +60,32 @@ jobs:
           OUT="pick6-${STAMP}.db.gz"
           # Strip any trailing slash from APP_URL so we don't end up with //api
           BASE="${APP_URL%/}"
+          URL="${BASE}/api/admin/backup"
           echo "Fetching backup → ${OUT}"
-          # --fail-with-body: non-2xx becomes a non-zero exit but keeps the body for debugging
-          # --location: follow 301/302 redirects (http→https, apex→www, etc.)
-          # --silent + --show-error: quiet on success, loud on failure
-          # --retry: survive a transient blip
+
+          # Diagnostic 1: dump the redirect chain *without* the auth header so
+          # we can see whether Railway/Cloudflare/etc is sending us elsewhere.
+          # (Authorization is stripped by curl on cross-host redirects, which
+          # is the #1 cause of mystery 401s here.)
+          echo "─── redirect chain (unauthenticated probe) ───"
+          curl -sS -I -L -o /dev/null \
+            -w "final: %{url_effective}\nstatus: %{http_code}\nredirects: %{num_redirects}\n" \
+            "$URL" || true
+          echo "──────────────────────────────────────────────"
+
+          # Diagnostic 2: print the key's length (not the key itself) so we
+          # can confirm the secret is actually populated and > 24 chars.
+          KEY_LEN=${#BACKUP_API_KEY}
+          echo "BACKUP_API_KEY length: ${KEY_LEN}"
+          if [ "$KEY_LEN" -lt 24 ]; then
+            echo "::error::BACKUP_API_KEY is shorter than 24 chars — the server will reject it."
+            exit 1
+          fi
+
+          # Actual request. Capture body + status separately so we can dump
+          # the server's error message when it 401s.
+          set +e
           HTTP_CODE=$(curl \
-              --fail-with-body \
               --location \
               --silent \
               --show-error \
@@ -76,7 +95,18 @@ jobs:
               --write-out "%{http_code}" \
               --output "$OUT" \
               --header "Authorization: Bearer ${BACKUP_API_KEY}" \
-              "${BASE}/api/admin/backup")
+              "$URL")
+          CURL_EXIT=$?
+          set -e
+          echo "curl exit: $CURL_EXIT"
+          echo "HTTP status: $HTTP_CODE"
+
+          if [ "$HTTP_CODE" != "200" ]; then
+            echo "::error::Server returned HTTP ${HTTP_CODE}. Response body:"
+            head -c 500 "$OUT" || true
+            echo
+            exit 1
+          fi
           echo "HTTP status: $HTTP_CODE"
 
           # Sanity-check: a valid gzip starts with 1f 8b
