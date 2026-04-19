@@ -84,9 +84,14 @@ jobs:
 
           # Actual request. Capture body + status separately so we can dump
           # the server's error message when it 401s.
+          # --location-trusted: follow redirects AND keep the Authorization
+          # header across hosts. Safe here because we own all hosts APP_URL
+          # could redirect to (Railway default domain, custom domain, www,
+          # etc.). Without this, curl strips the bearer token on any
+          # cross-host redirect → silent 401s.
           set +e
           HTTP_CODE=$(curl \
-              --location \
+              --location-trusted \
               --silent \
               --show-error \
               --retry 3 \
