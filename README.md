@@ -46,7 +46,7 @@ Pick Six Golf is a self-hosted web app for running golf major championship pools
 | Database | SQLite via better-sqlite3 |
 | Auth | JWT (jose) + bcrypt |
 | Scoring | ESPN public scoreboard API |
-| Rankings | OWGR-based tier system |
+| Rankings | Auto-synced OWGR top 200 (from ESPN) → locked per-tournament tier files |
 | Config | YAML schedule → auto-generated JSON |
 
 ## 🚀 Quick Start (Local Development)
@@ -96,6 +96,56 @@ pga:
 When you run `npm run dev` or `npm run build`, the YAML is automatically synced to JSON. You can also run `npm run sync` manually.
 
 > 💡 **Colors, themes, tier labels, logos, and branding** live in `src/lib/tournaments/config.ts` — you almost never need to touch that file.
+
+## 🏌️ Running a Tournament — The Whole Workflow
+
+The full tournament cycle, top to bottom. Detailed runbook lives in [ADMIN_GUIDE.md](ADMIN_GUIDE.md).
+
+### 🗓️ Weekly (any Monday, ~5 seconds)
+
+```bash
+npm run sync-owgr
+git add src/lib/owgr.json && git commit -m "OWGR refresh" && git push
+```
+
+Fetches the live OWGR top 200 from ESPN. Doesn't touch any locked tier files — only affects *future* tournaments you build.
+
+### 🎬 Pre-Tournament (~2 days before, when ESPN publishes the field)
+
+```bash
+npm run sync-owgr                       # one last OWGR refresh
+npm run build-field -- <slug>           # masters, pga, usopen, or theopen
+```
+
+This:
+1. Pulls the actual field (e.g. 156 players for the PGA) from ESPN
+2. Assigns each player to a tier using the latest OWGR
+3. Writes `src/lib/<slug>Tiers.ts` with a **LOCKED** timestamp
+4. From now on, that file refuses to be regenerated without `--force`
+
+Then:
+
+```bash
+git add src/lib/<slug>Tiers.ts && git commit -m "Lock <slug> 2026 field" && git push
+```
+
+Railway redeploys. Pool members can now make picks for the tournament.
+
+### 📺 During the Tournament
+
+**Nothing to do.** ESPN's live leaderboard streams through `/api/leaderboard?tournament=<slug>`, scoring + standings update automatically. Watch.
+
+### 🧹 Post-Tournament
+
+Nothing to do. The tier file stays locked permanently as the historical record of who picked from what. The next tournament gets its own file.
+
+### 🚨 Late field change (player WD, special invite) — before tournament starts only
+
+```bash
+npm run build-field -- <slug> --force
+```
+
+Use sparingly. After picks open, regenerating shuffles every member's tier options — only do this if you understand the trade-off.
 
 ## 🚂 Deploy on Railway (Recommended)
 
@@ -177,7 +227,10 @@ Once deployed, visit your Railway URL. The first person to **register and create
 ```
 tournaments.yaml              ← Edit this yearly (dates, ESPN IDs, courses)
 scripts/
-└── sync-schedule.js          ← Converts YAML → JSON (runs automatically)
+├── sync-schedule.js          ← Converts tournaments.yaml → schedule.json (auto)
+├── sync-owgr.js              ← Fetches live OWGR top 200 from ESPN → owgr.json
+├── build-field.js            ← Generates <slug>Tiers.ts from ESPN field + OWGR
+└── backup.js                 ← Manual DB backup (npm run backup)
 src/
 ├── app/                      # Next.js App Router pages & API routes
 │   ├── api/                  # REST endpoints (auth, picks, pool, standings, leaderboard)
@@ -185,24 +238,17 @@ src/
 │   ├── picks/                # Golfer selection UI
 │   └── leaderboard/          # Live tournament leaderboard
 ├── components/               # React components
-│   ├── Header.tsx            # Nav bar with tournament switcher dropdown
-│   ├── Footer.tsx            # Dynamic footer with tournament disclaimer
-│   ├── TournamentBar.tsx     # Subtle context bar (tournament • course • dates)
-│   ├── TournamentLogo.tsx    # Swaps logo per tournament
-│   ├── TournamentProvider.tsx # React context for active tournament + theme
-│   ├── TierPicker.tsx        # Golfer draft UI
-│   ├── Leaderboard.tsx       # Live ESPN leaderboard table
-│   ├── PoolStandings.tsx     # Pool member rankings
-│   └── PoolManager.tsx       # Create/join pool flow
 └── lib/                      # Core logic
     ├── db.ts                 # SQLite database (auto-creates tables)
-    ├── espn.ts               # ESPN API integration + caching
-    ├── mastersTiers.ts       # OWGR-based tier assignments
+    ├── espn.ts               # ESPN API integration + caching (tournament-aware)
+    ├── tiers.ts              # Tier-config registry (one entry per tournament)
+    ├── mastersTiers.ts       # 🔒 Auto-generated locked Masters tier table
+    ├── pgaTiers.ts           # 🔒 Auto-generated locked PGA tier table
+    ├── owgr.json             # Auto-generated OWGR top 200 snapshot
     ├── scoring.ts            # Best-5-of-6 scoring engine
     ├── auth.ts               # JWT session management
-    ├── constants.ts          # Current year
     └── tournaments/
-        ├── config.ts         # Tournament definitions (themes, tiers, branding) + YAML merge
+        ├── config.ts         # Permanent branding (themes, tier labels)
         └── schedule.json     # Auto-generated from tournaments.yaml (gitignored)
 ```
 
@@ -218,6 +264,8 @@ Golfers are assigned to tiers based on Official World Golf Rankings:
 | 🎲 Tier 4 | 51+ / Past Champs / Amateurs | 1 pick | Your wildcard — glory or heartbreak |
 
 Your best 5 of 6 scores count. That Tier 4 gamble on a past champion could win it all... or it might be the one you're glad doesn't count. 😅
+
+> 🔒 **Tier tables are LOCKED at generation time.** Once a tournament's tier file is built, the OWGR data inside it is frozen. Every pool member picks from the exact same set, no matter when they make their picks. The weekly OWGR refresh only affects *future* tournaments — never the locked one in progress. See [ADMIN_GUIDE.md](ADMIN_GUIDE.md) for the per-tournament workflow.
 
 ## 🧮 Scoring
 

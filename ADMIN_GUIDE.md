@@ -8,6 +8,29 @@ If something here drifts from reality, fix this doc first, *then* the code.
 
 ---
 
+## 🏌️ The 30-second cheat sheet
+
+The entire tournament cycle is **two commands**. Memorize these.
+
+```bash
+# 🗓️  WEEKLY (Mondays, ~5 sec) — refresh OWGR rankings
+npm run sync-owgr
+
+# 🎬  PRE-TOURNAMENT (~T-2 days) — lock the field for picks
+npm run build-field -- <slug>      # slug = masters | pga | usopen | theopen
+```
+
+Then `git add . && git commit -m "..." && git push` after each. Railway redeploys.
+
+**During the tournament:** nothing. ESPN streams live scoring through the app.
+
+**Post-tournament:** nothing. The locked tier file is the permanent record.
+
+That's it. The rest of this guide is reference material for when things go
+sideways or you're onboarding a new admin.
+
+---
+
 ## Table of contents
 
 1. [Environment variables](#1-environment-variables)
@@ -108,51 +131,159 @@ tournament dropdown should show all active tournaments.
 
 ## 3. Per-tournament setup — OWGR tiers
 
-Tier assignments for the Masters live in
-[`src/lib/mastersTiers.ts`](src/lib/mastersTiers.ts). They are the
-authoritative source — the picks API refuses any pick that doesn't match.
+Tier assignments for each major live in `src/lib/<slug>Tiers.ts`
+(`mastersTiers.ts`, `pgaTiers.ts`, `usopenTiers.ts`, `theopenTiers.ts`).
+These files are **auto-generated and locked** — they are the authoritative
+source the picks API uses to validate every pick.
 
-### When to update
+### TL;DR — the only commands you need
 
-- **~1 week before a tournament:** refresh tier lists using the latest OWGR.
-- **Day before the tournament:** lock in the final field (commitments, WDs,
-  special invites, amateurs).
+```bash
+# Weekly (Monday morning, 5 seconds)
+npm run sync-owgr
 
-### How to update
+# Per tournament (~2 days before, when ESPN publishes the field)
+npm run build-field -- <slug>           # one of: masters | pga | usopen | theopen
+```
 
-1. Check the Official World Golf Rankings: <https://www.owgr.com/ranking>
-2. For each golfer in the field, grab their **ESPN athlete ID** from
-   <https://www.espn.com/golf/players> (URL pattern: `/player/_/id/XXXXX`).
-3. Edit the `TIER_1`–`TIER_4` arrays in `mastersTiers.ts`:
-   - **Tier 1 (1 pick):** OWGR 1–10
-   - **Tier 2 (2 picks):** OWGR 11–25
-   - **Tier 3 (2 picks):** OWGR 26–50
-   - **Tier 4 (1 pick):** OWGR 51+ / past champions / amateurs
-4. Commit + push — Railway redeploys.
+That's the whole workflow. Commit the resulting file, push, Railway redeploys.
+You're done.
 
-### Adding tiers for another tournament (PGA / US Open / The Open)
+### 3a. Weekly OWGR refresh
 
-Today only the Masters has a tier table. To enable picks for another
-tournament:
+```bash
+npm run sync-owgr
+```
 
-1. Create `src/lib/pgaTiers.ts` (or similar) following the Masters file's
-   shape.
-2. Register it in [`src/lib/tiers.ts`](src/lib/tiers.ts):
-   ```typescript
-   const CONFIGS: Record<string, TierConfig> = {
-     masters: { ... },
-     pga: { getTier, fieldIds },   // <── add this
-   };
-   ```
-3. Users can now create pools for that tournament.
-   Without a registered tier config, the picks API returns
-   *"Picks aren't open yet for this tournament"* — which is the safe default.
+What it does:
 
-### Why this matters
+- Hits ESPN's golf rankings page (`espn.com/golf/rankings`)
+- Pulls the server-rendered OWGR top 200, including ESPN athlete IDs
+- Writes `src/lib/owgr.json` with `{ rank, name, espnId }` for each player
+- Takes about 1 second
 
-The picks endpoint validates every pick against `tierConfig.getTier(id)`. A
-user who tampers with the frontend to submit Scottie Scheffler in Tier 4
-gets a 400. Unknown golfers (not in the field) are rejected entirely.
+What it does **not** do:
+
+- It does **not** modify any `<slug>Tiers.ts` file
+- It does **not** affect any tournament that's already been locked
+- The freshly-pulled OWGR is only consumed the next time you run `build-field`
+
+Cadence: every Monday morning is plenty. The week of a major, run it again
+right before you run `build-field` to get the freshest rankings.
+
+Commit and push:
+
+```bash
+git add src/lib/owgr.json
+git commit -m "OWGR refresh $(date +%Y-%m-%d)"
+git push
+```
+
+### 3b. Building a tournament's locked tier file
+
+When ESPN publishes the field for a tournament (typically ~T-2 days), run:
+
+```bash
+npm run sync-owgr                      # one final refresh
+npm run build-field -- masters         # or pga, usopen, theopen
+```
+
+What it does:
+
+1. Looks up the ESPN event id for `<slug>` in `tournaments.yaml`
+2. Fetches every competitor from ESPN's leaderboard endpoint
+3. Cross-references each player against `src/lib/owgr.json`
+4. Assigns tiers using OWGR rank:
+   - **Tier 1:** OWGR 1–10 (1 pick)
+   - **Tier 2:** OWGR 11–25 (2 picks)
+   - **Tier 3:** OWGR 26–50 (2 picks)
+   - **Tier 4:** OWGR 51+ / unranked club pros / amateurs (1 pick)
+5. Writes `src/lib/<slug>Tiers.ts` with a `LOCKED: <timestamp>` header
+6. From this point on, the file refuses to be regenerated without `--force`
+
+Then commit and push:
+
+```bash
+git add src/lib/<slug>Tiers.ts
+git commit -m "Lock <slug> 2026 field"
+git push
+```
+
+Railway redeploys. The picks API now accepts picks for that tournament.
+
+### 3c. The lock — why it matters
+
+**Once `<slug>Tiers.ts` exists, `build-field` refuses to overwrite it.**
+
+```text
+🔒 src/lib/pgaTiers.ts is already locked (LOCKED: 2026-05-12T10:30:00.000Z).
+   Tier tables are frozen at generation time so every pool member
+   picks from the same set. Refusing to overwrite.
+```
+
+This is intentional. Without the lock, a stray re-run of `build-field` mid-tournament
+would shuffle every member's tier options after they've already picked.
+Example: Aaron Rai is OWGR #39 (Tier 3) when picks open Monday. He wins the
+PGA. By Tuesday he's OWGR #15 (Tier 2). If anyone re-ran `build-field`, every
+member who already chose him as their T3 pick would suddenly have an invalid
+roster. Locking prevents that.
+
+The weekly OWGR refresh (§3a) is independent — it only affects *future*
+tournaments. Locked files never change.
+
+### 3d. Late field change (player WD, special invite)
+
+A player withdraws Wednesday morning, the day before the tournament starts.
+You need to add their replacement. **This is the only case for `--force`:**
+
+```bash
+npm run build-field -- pga --force
+```
+
+- Only do this **before** picks have opened (or before any meaningful number
+  of picks have been made — your call).
+- The new file gets a new `LOCKED:` timestamp.
+- Any pool member who already picked the withdrawn player will need to re-pick
+  on the picks page.
+- Add an audit note in your commit message:
+
+```bash
+git commit -m "Re-lock pga field: <Player> WD, added <Player>"
+```
+
+### 3e. Adding the US Open or The Open
+
+The framework supports all four majors identically. When ESPN publishes the
+US Open field in mid-June 2026:
+
+```bash
+npm run sync-owgr
+npm run build-field -- usopen
+```
+
+That's it. The new file is generated, no code changes needed — `tiers.ts`
+already imports from `usopenTiers.ts` (it just falls through to "not yet
+published" until the file exists).
+
+Same for The Open in mid-July.
+
+### 3f. What you do NOT need to do anymore
+
+You can ignore these old workflows entirely:
+
+- ❌ Looking up each player's OWGR rank by hand
+- ❌ Searching for ESPN athlete IDs one by one
+- ❌ Hand-editing `TIER_1`–`TIER_4` arrays
+- ❌ Importing `mastersTiers` directly in `espn.ts` (it now uses the generic
+      `tiers.ts` registry)
+
+### 3g. Why this is safe
+
+The picks endpoint (`src/app/api/picks/route.ts`) validates every pick
+against `tierConfig.getTier(id)`. A user who tampers with the frontend to
+submit Scottie Scheffler in Tier 4 gets a 400. Unknown golfers (not in the
+locked field) are rejected entirely. Without a tier file, the API returns
+*"Picks aren't open yet for this tournament"* — the safe default.
 
 ---
 
@@ -351,9 +482,17 @@ Before pushing a change that touches auth, picks, or the DB schema:
 
 ### Before a tournament weekend
 
-- [ ] Field is finalized in `mastersTiers.ts` (or equivalent)
+Run this checklist ~T-2 days, when ESPN publishes the field:
+
+- [ ] `npm run sync-owgr` — OWGR snapshot is fresh
+- [ ] `npm run build-field -- <slug>` — locked tier file generated
+- [ ] Eyeball the new `<slug>Tiers.ts` — do the tier counts look right?
+      (Expect ~10 / 15 / 25 / rest. T4 will be bloated with unranked club
+      pros for the PGA — that's expected.)
 - [ ] `tournaments.yaml` has the correct ESPN event ID for this year
 - [ ] Lock dates in active pools point to the right start time
+- [ ] `git push` — wait for Railway to redeploy
+- [ ] Visit `/picks` for the tournament — picks render, no errors
 - [ ] Manually trigger a backup workflow run to confirm it still works
 - [ ] Download that backup and spot-check
 - [ ] Email delivery tested if you've wired up Resend
@@ -367,8 +506,20 @@ You probably changed `APP_URL` or deployed to a new domain. Browser sends an
 `Origin` that doesn't match, CSRF rejects it. Fix `APP_URL` on Railway.
 
 ### "Picks aren't open yet for this tournament"
-You created a pool for a tournament slug that doesn't have a registered tier
-config. See [§3 – Adding tiers for another tournament](#adding-tiers-for-another-tournament-pga--us-open--the-open).
+You created a pool for a tournament slug whose `<slug>Tiers.ts` file doesn't
+exist yet (ESPN hasn't published the field, or you haven't run `build-field`).
+Run `npm run build-field -- <slug>` when the field is available. See
+[§3 — Per-tournament setup](#3-per-tournament-setup--owgr-tiers).
+
+### `build-field` refuses to overwrite a tier file
+That's the lock guard working as designed. See
+[§3c — The lock](#3c-the-lock--why-it-matters). Pass `--force` only if
+you understand the implications.
+
+### `sync-owgr` fails with "Could not find __espnfitt__ blob"
+ESPN restructured their rankings page HTML. Rare but possible.
+Fallback: skip the weekly refresh until it's fixed — locked tier files
+don't depend on it. Open `scripts/sync-owgr.js` and adjust the regex.
 
 ### Leaderboard shows no golfers / stale data
 ESPN API is the single point of failure. Check:
@@ -420,10 +571,12 @@ Restore from the most recent backup. See [§4 – Restoring from a backup](#rest
 ## 9. Where things live (file map)
 
 ```
-├── tournaments.yaml                 ← YEARLY: ESPN IDs + dates
+├── tournaments.yaml                 ← YEARLY: ESPN IDs + dates per tournament
 ├── .github/workflows/backup.yml     ← nightly DB backup workflow
 ├── scripts/
-│   ├── sync-schedule.js             ← builds schedule.json from YAML
+│   ├── sync-schedule.js             ← tournaments.yaml → schedule.json (auto)
+│   ├── sync-owgr.js                 ← WEEKLY: ESPN rankings → owgr.json
+│   ├── build-field.js               ← PER-TOURNAMENT: ESPN field + OWGR → <slug>Tiers.ts (LOCKED)
 │   └── backup.js                    ← local backup script (npm run backup)
 ├── src/
 │   ├── app/
@@ -433,6 +586,7 @@ Restore from the most recent backup. See [§4 – Restoring from a backup](#rest
 │   │       ├── admin/backup/        ← protected endpoint GH Actions hits
 │   │       ├── account/             ← DELETE /api/account (delete self)
 │   │       ├── auth/                ← login/register/me/logout/forgot/reset
+│   │       ├── leaderboard/         ← live ESPN proxy (tournament-aware)
 │   │       ├── pool/                ← create/list/patch + join/leave/member/transfer
 │   │       └── picks/               ← save/get picks (tier validation here)
 │   └── lib/
@@ -440,12 +594,17 @@ Restore from the most recent backup. See [§4 – Restoring from a backup](#rest
 │       ├── audit.ts                 ← write-only audit log
 │       ├── db.ts                    ← SQLite + schema migrations
 │       ├── email.ts                 ← Resend stub + dev logger
-│       ├── mastersTiers.ts          ← PER-TOURNAMENT: tier assignments
+│       ├── espn.ts                  ← ESPN API integration + caching (tournament-aware)
+│       ├── owgr.json                ← GENERATED weekly by sync-owgr (top 200)
+│       ├── mastersTiers.ts          ← 🔒 GENERATED per-tournament, LOCKED
+│       ├── pgaTiers.ts              ← 🔒 GENERATED per-tournament, LOCKED
+│       ├── usopenTiers.ts           ← 🔒 GENERATED per-tournament, LOCKED (when field publishes)
+│       ├── theopenTiers.ts          ← 🔒 GENERATED per-tournament, LOCKED (when field publishes)
 │       ├── poolOps.ts               ← shared pool-membership mutations
 │       ├── rateLimit.ts             ← in-memory rate limiting
 │       ├── scoring.ts               ← best-5-of-6 standings calculation
 │       ├── security.ts              ← CSRF, URL allowlist, pw policy, timing-safe eq
-│       ├── tiers.ts                 ← tier lookup registry (add tournaments here)
+│       ├── tiers.ts                 ← TierConfig registry (one CONFIGS entry per tournament)
 │       └── tournaments/
 │           ├── config.ts            ← PERMANENT: branding, colors, tier labels
 │           └── schedule.json        ← GENERATED — do not edit
@@ -453,5 +612,5 @@ Restore from the most recent backup. See [§4 – Restoring from a backup](#rest
 
 ---
 
-*Last updated: April 2026. If you change operational behavior, update this
+*Last updated: May 2026. If you change operational behavior, update this
 document in the same PR.*

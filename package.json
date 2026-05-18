@@ -4,6 +4,8 @@
   "private": true,
   "scripts": {
     "sync": "node scripts/sync-schedule.js",
+    "sync-owgr": "node scripts/sync-owgr.js",
+    "build-field": "node scripts/build-field.js",
     "dev": "npm run sync && next dev",
     "build": "npm run sync && next build",
     "start": "next start",

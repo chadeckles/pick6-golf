@@ -4,15 +4,7 @@ import type {
   TieredGolfers,
 } from "./types";
 import { CUT_PENALTY_PER_ROUND } from "./types";
-import {
-  getTierForGolfer,
-  getOwgrForGolfer,
-  getAllMastersPlayerIds,
-  TIER_1,
-  TIER_2,
-  TIER_3,
-  TIER_4,
-} from "./mastersTiers";
+import { getTierConfig, type TierConfig } from "./tiers";
 import { CURRENT_YEAR } from "./constants";
 import { getTournament, type TournamentConfig } from "./tournaments/config";
 
@@ -92,6 +84,7 @@ async function getEventId(tournament: TournamentConfig): Promise<string | null> 
 export async function fetchLeaderboard(tournamentSlug: string = "masters"): Promise<GolferInfo[]> {
   const tournament = getTournament(tournamentSlug);
   const coursePar = tournament.par;
+  const tierConfig = getTierConfig(tournamentSlug);
 
   // Return cached data if fresh
   const cached = getCached(tournamentSlug);
@@ -101,7 +94,7 @@ export async function fetchLeaderboard(tournamentSlug: string = "masters"): Prom
     // Strategy 1: Event-specific leaderboard (preferred — works for any event, any time)
     const eventId = await getEventId(tournament);
     if (eventId) {
-      const golfers = await fetchEventLeaderboard(eventId, coursePar, tournamentSlug);
+      const golfers = await fetchEventLeaderboard(eventId, coursePar, tournamentSlug, tierConfig);
       if (golfers.length > 0) {
         setCache(tournamentSlug, golfers);
         return golfers;
@@ -109,15 +102,15 @@ export async function fetchLeaderboard(tournamentSlug: string = "masters"): Prom
     }
 
     // Strategy 2: Generic scoreboard (only works during event week)
-    const golfers = await fetchFromScoreboard(tournament, coursePar);
+    const golfers = await fetchFromScoreboard(tournament, coursePar, tierConfig);
     if (golfers.length > 0) {
       setCache(tournamentSlug, golfers);
       return golfers;
     }
 
-    // Strategy 3: Static field from tier config (no live scores — Masters only for now)
-    if (tournamentSlug === "masters") {
-      const staticField = getStaticFieldFromTiers();
+    // Strategy 3: Static field from tier config (any tournament with registered tiers)
+    if (tierConfig) {
+      const staticField = getStaticFieldFromTiers(tierConfig);
       setCache(tournamentSlug, staticField);
       return staticField;
     }
@@ -125,7 +118,7 @@ export async function fetchLeaderboard(tournamentSlug: string = "masters"): Prom
     return [];
   } catch (err) {
     console.error(`Failed to fetch ${tournament.name} leaderboard:`, err);
-    return getCached(tournamentSlug) ?? (tournamentSlug === "masters" ? getStaticFieldFromTiers() : []);
+    return getCached(tournamentSlug) ?? (tierConfig ? getStaticFieldFromTiers(tierConfig) : []);
   }
 }
 
@@ -139,6 +132,7 @@ async function fetchEventLeaderboard(
   eventId: string,
   coursePar: number,
   tournamentSlug: string,
+  tierConfig: TierConfig | null,
 ): Promise<GolferInfo[]> {
   try {
     const url = `${ESPN_LEADERBOARD_URL}?event=${eventId}`;
@@ -153,7 +147,7 @@ async function fetchEventLeaderboard(
     const event = data.events?.[0];
     if (!event) return [];
 
-    return parseCompetitors(event, coursePar, tournamentSlug);
+    return parseCompetitors(event, coursePar, tournamentSlug, tierConfig);
   } catch (err) {
     console.error("Event leaderboard fetch failed:", err);
     return [];
@@ -166,7 +160,11 @@ async function fetchEventLeaderboard(
  * Fallback: Fetch from generic ESPN scoreboard and find the tournament event.
  * Only works during the tournament's week since the scoreboard shows the current event.
  */
-async function fetchFromScoreboard(tournament: TournamentConfig, coursePar: number): Promise<GolferInfo[]> {
+async function fetchFromScoreboard(
+  tournament: TournamentConfig,
+  coursePar: number,
+  tierConfig: TierConfig | null,
+): Promise<GolferInfo[]> {
   try {
     const res = await fetch(ESPN_SCOREBOARD_URL, { cache: "no-store" });
     if (!res.ok) {
@@ -189,7 +187,7 @@ async function fetchFromScoreboard(tournament: TournamentConfig, coursePar: numb
       return [];
     }
 
-    return parseCompetitors(event, coursePar, tournament.slug);
+    return parseCompetitors(event, coursePar, tournament.slug, tierConfig);
   } catch (err) {
     console.error("Scoreboard fetch failed:", err);
     return [];
@@ -199,37 +197,23 @@ async function fetchFromScoreboard(tournament: TournamentConfig, coursePar: numb
 // ─── Strategy 3: Static field from tier config ──────────────────────────
 
 /**
- * Build a static golfer list from our tier configuration.
+ * Build a static golfer list from the tournament's tier configuration.
  * Used pre-tournament or when ESPN APIs are unavailable.
  */
-function getStaticFieldFromTiers(): GolferInfo[] {
-  const allTiers = [
-    { entries: TIER_1, tier: 1 },
-    { entries: TIER_2, tier: 2 },
-    { entries: TIER_3, tier: 3 },
-    { entries: TIER_4, tier: 4 },
-  ];
-
-  const golfers: GolferInfo[] = [];
-  for (const { entries, tier } of allTiers) {
-    for (const entry of entries) {
-      golfers.push({
-        id: entry.espnId,
-        name: entry.name,
-        rank: entry.owgr,
-        tier,
-        score: null,
-        toPar: null,
-        thru: null,
-        status: "active",
-        position: String(golfers.length + 1),
-        currentRound: null,
-        rounds: [],
-      });
-    }
-  }
-
-  return golfers;
+function getStaticFieldFromTiers(tierConfig: TierConfig): GolferInfo[] {
+  return tierConfig.getStaticField().map((entry, i) => ({
+    id: entry.espnId,
+    name: entry.name,
+    rank: entry.owgr,
+    tier: entry.tier,
+    score: null,
+    toPar: null,
+    thru: null,
+    status: "active",
+    position: String(i + 1),
+    currentRound: null,
+    rounds: [],
+  }));
 }
 
 // ─── Competitor parsing ─────────────────────────────────────────────────
@@ -238,13 +222,15 @@ function parseCompetitors(
   event: ESPNLeaderboardResponse["events"][0],
   coursePar: number,
   tournamentSlug: string,
+  tierConfig: TierConfig | null,
 ): GolferInfo[] {
   const competitors = event.competitions?.[0]?.competitors ?? [];
   const eventState = event.status?.type?.state ?? "pre";
 
-  // For Masters, filter to known field. For other tournaments, include all competitors.
-  const isMasters = tournamentSlug === "masters";
-  const mastersPlayerIds = isMasters ? getAllMastersPlayerIds() : null;
+  // If we have a registered tier config, filter to the known field. Otherwise
+  // (tournament without published tiers yet) include all competitors so the
+  // leaderboard still renders — they'll get tier 0 and ESPN-provided rank.
+  const fieldIds = tierConfig?.fieldIds ?? null;
 
   const golfers: GolferInfo[] = competitors
     .map((c, index) => {
@@ -316,16 +302,17 @@ function parseCompetitors(
         countryFlag: c.athlete?.flag?.href,
       };
     })
-    // ── Filter: for Masters, only include golfers in the known field.
-    //    For other tournaments, include all competitors from ESPN.
-    .filter((g) => !mastersPlayerIds || mastersPlayerIds.has(g.id));
+    // ── Filter: when a tier config exists, drop competitors not in our
+    //    canonical field (defends against ESPN late-adds / id drift).
+    .filter((g) => !fieldIds || fieldIds.has(g.id));
 
-  // Assign tiers and OWGR ranks from pre-set config (Masters only for now).
-  // Other tournaments get tier 0 / ESPN-provided rank until we add per-tournament tiers.
-  if (isMasters) {
+  // Assign tiers and OWGR ranks from the tournament's tier config.
+  // Tournaments without a registered config keep tier 0 / ESPN-provided rank.
+  if (tierConfig) {
     golfers.forEach((g) => {
-      g.rank = getOwgrForGolfer(g.id);
-      g.tier = getTierForGolfer(g.id);
+      const owgr = tierConfig.getOwgr(g.id);
+      if (owgr !== null) g.rank = owgr;
+      g.tier = tierConfig.getTier(g.id) ?? 0;
     });
   }
 
