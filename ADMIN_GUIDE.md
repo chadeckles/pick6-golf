@@ -253,19 +253,32 @@ git commit -m "Re-lock pga field: <Player> WD, added <Player>"
 
 ### 3e. Adding the US Open or The Open
 
-The framework supports all four majors identically. When ESPN publishes the
-US Open field in mid-June 2026:
+The four majors run through the same pipeline. A **brand-new** tournament slug
+needs one small code step the first time it's built — registering it in
+[`src/lib/tiers.ts`](src/lib/tiers.ts). `build-field` can't pre-wire this because
+the import target, `src/lib/<slug>Tiers.ts`, doesn't exist until `build-field`
+generates it (a static `import` of a missing module won't compile).
+
+When ESPN publishes the field:
 
 ```bash
 npm run sync-owgr
 npm run build-field -- usopen
 ```
 
-That's it. The new file is generated, no code changes needed — `tiers.ts`
-already imports from `usopenTiers.ts` (it just falls through to "not yet
-published" until the file exists).
+`build-field` finishes by printing the exact registration snippet. Follow it: in
+`src/lib/tiers.ts`, import the new file's getters + `TIER_1`–`TIER_4`, then add a
+`CONFIGS["<slug>"]` entry (copy the `masters`/`pga` block and swap the names).
+Run `npx tsc --noEmit` to confirm it compiles, then commit **both** files.
 
-Same for The Open in mid-July.
+**Status:** `masters`, `pga`, and `usopen` are registered. **The Open** is the
+only one still needing this step — do it when its field drops in mid-July.
+
+> A *future year's* US Open (or any already-registered tournament) needs **no**
+> code change — just `build-field` and commit the regenerated tier file. The
+> registration is one-time per tournament slug, not per year.
+
+Same `build-field` flow for The Open in mid-July.
 
 ### 3f. What you do NOT need to do anymore
 
@@ -419,6 +432,31 @@ the dropdown. If you're the only member, the pool is **deleted entirely**.
 **No.** The lock is enforced server-side specifically so this can't happen —
 and if you override it for one person, you've opened the door to every
 future dispute. Point them at the audit log entry and move on.
+
+### "Can you move / reopen the pick lock?" (admin pool config)
+
+Yes — but only *before* it passes. The pick lock is **per pool**:
+
+- **Default:** the selected tournament's first round (8:00 AM, server-local
+  time), derived per tournament — a US Open pool gets a June lock, not April.
+  (Before mid-2026 every pool wrongly inherited the Masters date; that's fixed
+  in [`getDefaultLockISO`](src/lib/tournaments/config.ts).)
+- **Set at creation:** the Create Pool form has a **Picks Lock** field,
+  prefilled with that default. Change it to run a beta or close entries early.
+- **Edit later:** Dashboard → select the pool → **Lock: … → Edit**.
+
+Two server-enforced rules ([`pool/route.ts`](src/app/api/pool/route.ts) PATCH):
+
+1. You can only pull a lock **earlier**, never push it **later** than the
+   original `original_lock_date`.
+2. Once the original lock has passed, it's **frozen** — no further changes. This
+   is what backs the "can't fix my picks" answer above.
+
+**Time zones:** the field shows and accepts **your browser's local time**. It's
+stored as a UTC instant, so each member sees the lock in *their own* zone — set
+"Sunday 6 PM" your time and a West-Coast member correctly sees 3 PM. (Both the
+create and dashboard-edit inputs round-trip through
+[`toLocalInputValue`](src/lib/datetime.ts) so they can't drift.)
 
 ### "Someone says their picks got changed"
 
@@ -591,8 +629,7 @@ Restore from the most recent backup. See [§4 – Restoring from a backup](#rest
 │   │       └── picks/               ← save/get picks (tier validation here)
 │   └── lib/
 │       ├── auth.ts                  ← JWT session
-│       ├── audit.ts                 ← write-only audit log
-│       ├── db.ts                    ← SQLite + schema migrations
+│       ├── audit.ts                 ← write-only audit log│       ├── datetime.ts               ← datetime-local <input> round-trip helper│       ├── db.ts                    ← SQLite + schema migrations
 │       ├── email.ts                 ← Resend stub + dev logger
 │       ├── espn.ts                  ← ESPN API integration + caching (tournament-aware)
 │       ├── owgr.json                ← GENERATED weekly by sync-owgr (top 200)
@@ -612,5 +649,5 @@ Restore from the most recent backup. See [§4 – Restoring from a backup](#rest
 
 ---
 
-*Last updated: May 2026. If you change operational behavior, update this
+*Last updated: June 2026. If you change operational behavior, update this
 document in the same PR.*

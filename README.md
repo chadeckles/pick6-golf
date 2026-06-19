@@ -32,7 +32,7 @@ Pick Six Golf is a self-hosted web app for running golf major championship pools
 - **🎨 Dynamic Theming** — each tournament gets its own color palette and branding, automatically
 - **📡 Live ESPN Scoring** — real-time leaderboard, no manual score entry
 - **💰 Payment Tracking** — pool admins can add Venmo/PayPal/CashApp links and track who's paid
-- **🔒 Lock Date** — picks lock before Round 1 tees off (no mid-tournament "adjustments")
+- **🔒 Configurable Lock Date** — picks lock at Round 1 by default; pool admins can set a custom lock when creating a pool (great for betas) and pull it earlier later — but never past the original, and never once it's passed
 - **📱 Mobile Friendly** — works on your phone because that's where you'll be checking it every 5 minutes
 - **🛡️ Security** — bcrypt passwords, JWT sessions, rate limiting, input validation
 - **♿ Accessible** — focus-visible styles, reduced-motion support
@@ -128,6 +128,11 @@ Then:
 ```bash
 git add src/lib/<slug>Tiers.ts && git commit -m "Lock <slug> 2026 field" && git push
 ```
+
+> ⚠️ **First time building a given tournament?** It also needs a one-time
+> registration in `src/lib/tiers.ts` — `build-field` prints the exact snippet.
+> `masters`, `pga`, and `usopen` are done; The Open is pending. See
+> [ADMIN_GUIDE.md §3e](ADMIN_GUIDE.md).
 
 Railway redeploys. Pool members can now make picks for the tournament.
 
@@ -244,6 +249,7 @@ src/
     ├── tiers.ts              # Tier-config registry (one entry per tournament)
     ├── mastersTiers.ts       # 🔒 Auto-generated locked Masters tier table
     ├── pgaTiers.ts           # 🔒 Auto-generated locked PGA tier table
+    ├── usopenTiers.ts        # 🔒 Auto-generated locked US Open tier table
     ├── owgr.json             # Auto-generated OWGR top 200 snapshot
     ├── scoring.ts            # Best-5-of-6 scoring engine
     ├── auth.ts               # JWT session management
