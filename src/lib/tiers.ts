@@ -29,6 +29,15 @@ import {
   TIER_3 as PGA_TIER_3,
   TIER_4 as PGA_TIER_4,
 } from "./pgaTiers";
+import {
+  getTierForGolfer as getUsOpenTier,
+  getOwgrForGolfer as getUsOpenOwgr,
+  getAllUsOpenPlayerIds,
+  TIER_1 as USOPEN_TIER_1,
+  TIER_2 as USOPEN_TIER_2,
+  TIER_3 as USOPEN_TIER_3,
+  TIER_4 as USOPEN_TIER_4,
+} from "./usopenTiers";
 
 /** Single entry in a tournament's tier table. */
 export interface TierEntry {
@@ -82,6 +91,19 @@ function buildPgaStaticField(): StaticFieldEntry[] {
   return out;
 }
 
+// ─── US Open ────────────────────────────────────────────────────────────
+
+const USOPEN_FIELD_IDS = getAllUsOpenPlayerIds();
+
+function buildUsOpenStaticField(): StaticFieldEntry[] {
+  const out: StaticFieldEntry[] = [];
+  for (const e of USOPEN_TIER_1) out.push({ ...e, tier: 1 });
+  for (const e of USOPEN_TIER_2) out.push({ ...e, tier: 2 });
+  for (const e of USOPEN_TIER_3) out.push({ ...e, tier: 3 });
+  for (const e of USOPEN_TIER_4) out.push({ ...e, tier: 4 });
+  return out;
+}
+
 const CONFIGS: Record<string, TierConfig> = {
   masters: {
     getTier: (id) => {
@@ -110,6 +132,19 @@ const CONFIGS: Record<string, TierConfig> = {
     },
     fieldIds: PGA_FIELD_IDS,
     getStaticField: buildPgaStaticField,
+  },
+  usopen: {
+    getTier: (id) => {
+      if (!USOPEN_FIELD_IDS.has(id)) return null;
+      return getUsOpenTier(id);
+    },
+    getOwgr: (id) => {
+      if (!USOPEN_FIELD_IDS.has(id)) return null;
+      const rank = getUsOpenOwgr(id);
+      return rank === 999 ? null : rank;
+    },
+    fieldIds: USOPEN_FIELD_IDS,
+    getStaticField: buildUsOpenStaticField,
   },
 };
 
