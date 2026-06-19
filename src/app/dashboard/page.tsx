@@ -15,6 +15,7 @@ import {
 } from "@/components/Icons";
 import { useTournament } from "@/components/TournamentProvider";
 import { getTournament } from "@/lib/tournaments/config";
+import { toLocalInputValue } from "@/lib/datetime";
 import TournamentBar from "@/components/TournamentBar";
 
 interface PoolInfo {
@@ -96,7 +97,9 @@ export default function DashboardPage() {
           setPaymentLabel(targetPool.paymentLabel || "Pay Entry Fee");
           setEntryFee(targetPool.entryFee || "");
           const ld = new Date(targetPool.lockDate);
-          setLockDateInput(ld.toISOString().slice(0, 16));
+          // Populate in LOCAL time to match new Date(value) on save — see
+          // src/lib/datetime.ts. Using UTC here shifted the lock every edit.
+          setLockDateInput(toLocalInputValue(ld));
         }
 
         const picksRes = await fetch(`/api/picks?poolId=${targetId}`);

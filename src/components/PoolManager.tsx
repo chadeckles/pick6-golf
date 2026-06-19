@@ -5,17 +5,10 @@ import { CURRENT_YEAR } from "@/lib/constants";
 import { TrophyIcon, FlagIcon, CopyIcon } from "@/components/Icons";
 import { useTournament } from "@/components/TournamentProvider";
 import type { TournamentConfig } from "@/lib/tournaments/config";
+import { toLocalInputValue } from "@/lib/datetime";
 
 interface PoolManagerProps {
   onPoolReady: () => void;
-}
-
-// Format a Date as `YYYY-MM-DDTHH:mm` in local time for <input type="datetime-local">.
-function toLocalInputValue(d: Date): string {
-  const pad = (n: number) => String(n).padStart(2, "0");
-  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(
-    d.getHours()
-  )}:${pad(d.getMinutes())}`;
 }
 
 // Default pick-lock for a tournament: first round, 8:00 AM local. Mirrors the
