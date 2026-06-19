@@ -4,15 +4,35 @@ import { useState } from "react";
 import { CURRENT_YEAR } from "@/lib/constants";
 import { TrophyIcon, FlagIcon, CopyIcon } from "@/components/Icons";
 import { useTournament } from "@/components/TournamentProvider";
+import type { TournamentConfig } from "@/lib/tournaments/config";
 
 interface PoolManagerProps {
   onPoolReady: () => void;
+}
+
+// Format a Date as `YYYY-MM-DDTHH:mm` in local time for <input type="datetime-local">.
+function toLocalInputValue(d: Date): string {
+  const pad = (n: number) => String(n).padStart(2, "0");
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(
+    d.getHours()
+  )}:${pad(d.getMinutes())}`;
+}
+
+// Default pick-lock for a tournament: first round, 8:00 AM local. Mirrors the
+// server default in src/lib/tournaments/config.ts (getDefaultLockISO).
+function defaultLockInputValue(t: TournamentConfig): string {
+  const d = t.dates[CURRENT_YEAR];
+  const base = d
+    ? new Date(CURRENT_YEAR, d.month - 1, d.start, 8, 0, 0)
+    : new Date();
+  return toLocalInputValue(base);
 }
 
 export default function PoolManager({ onPoolReady }: PoolManagerProps) {
   const { tournament } = useTournament();
   const [mode, setMode] = useState<"choose" | "create" | "join">("choose");
   const [poolName, setPoolName] = useState("");
+  const [lockAt, setLockAt] = useState("");
   const [inviteCode, setInviteCode] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
@@ -26,10 +46,20 @@ export default function PoolManager({ onPoolReady }: PoolManagerProps) {
     setLoading(true);
     setError("");
     try {
+      const payload: Record<string, unknown> = {
+        name: poolName,
+        tournament: tournament.slug,
+      };
+      if (lockAt) {
+        const parsed = new Date(lockAt); // datetime-local is interpreted as local time
+        if (!Number.isNaN(parsed.getTime())) {
+          payload.lockDate = parsed.toISOString();
+        }
+      }
       const res = await fetch("/api/pool", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name: poolName, tournament: tournament.slug }),
+        body: JSON.stringify(payload),
       });
       const data = await res.json();
       if (!res.ok) {
@@ -124,7 +154,10 @@ export default function PoolManager({ onPoolReady }: PoolManagerProps) {
               Join Existing Pool
             </button>
             <button
-              onClick={() => setMode("create")}
+              onClick={() => {
+                setLockAt(defaultLockInputValue(tournament));
+                setMode("create");
+              }}
               className="w-full bg-white border-2 border-t-primary text-t-primary py-3 rounded-lg font-bold hover:bg-t-cream transition-colors"
             >
               Create New Pool
@@ -161,6 +194,21 @@ export default function PoolManager({ onPoolReady }: PoolManagerProps) {
                 placeholder={`e.g. ${tournament.name} Pool ${CURRENT_YEAR}`}
                 className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-t-primary focus:border-transparent"
               />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Picks Lock
+              </label>
+              <input
+                type="datetime-local"
+                value={lockAt}
+                onChange={(e) => setLockAt(e.target.value)}
+                className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-t-primary focus:border-transparent"
+              />
+              <p className="text-xs text-gray-500 mt-1">
+                When picks freeze. Defaults to the first round — change it to run
+                a beta or close entries early.
+              </p>
             </div>
             <button
               onClick={handleCreate}

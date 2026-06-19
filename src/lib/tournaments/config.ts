@@ -241,6 +241,28 @@ export function getTournament(slug: string): TournamentConfig {
   return TOURNAMENTS[slug] ?? TOURNAMENTS.masters;
 }
 
+/**
+ * Default pick-lock timestamp for a tournament/year.
+ *
+ * Picks lock at the first round's start — 8:00 AM, server-local time —
+ * derived from each tournament's own schedule rather than being hardcoded to
+ * Augusta. (The old default sent every pool, US Open included, to the Masters'
+ * April Thursday, which is already in the past for any later major.)
+ *
+ * Returns null when no date is configured for that year so callers can pick a
+ * safe fallback.
+ */
+export function getDefaultLockISO(
+  slug: string,
+  year: number = new Date().getFullYear()
+): string | null {
+  const t = TOURNAMENTS[slug];
+  const d = t?.dates[year];
+  if (!d) return null;
+  // schedule months are 1-based; the Date constructor wants 0-based.
+  return new Date(year, d.month - 1, d.start, 8, 0, 0).toISOString();
+}
+
 export function getDefaultTournament(): TournamentConfig {
   const now = new Date();
   const year = now.getFullYear();

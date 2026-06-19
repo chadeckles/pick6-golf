@@ -3,7 +3,7 @@ import { getDb } from "@/lib/db";
 import { getSession } from "@/lib/auth";
 import { v4 as uuid } from "uuid";
 import { MASTERS_INFO } from "@/lib/constants";
-import { getTournament } from "@/lib/tournaments/config";
+import { getTournament, getDefaultLockISO } from "@/lib/tournaments/config";
 import {
   assertStringField,
   checkOrigin,
@@ -61,7 +61,10 @@ export async function POST(req: NextRequest) {
       }
       lock = parsed.toISOString();
     } else {
-      lock = MASTERS_INFO.lockDateISO;
+      // Default to the SELECTED tournament's first round — not a hardcoded
+      // Masters date. MASTERS_INFO is only an ultimate fallback for a
+      // tournament with no configured schedule (shouldn't happen in practice).
+      lock = getDefaultLockISO(slug) ?? MASTERS_INFO.lockDateISO;
     }
 
     const db = getDb();
