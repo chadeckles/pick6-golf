@@ -32,7 +32,7 @@ Pick Six Golf is a self-hosted web app for running golf major championship pools
 - **🎨 Dynamic Theming** — each tournament gets its own color palette and branding, automatically
 - **📡 Live ESPN Scoring** — real-time leaderboard, no manual score entry
 - **💰 Payment Tracking** — pool admins can add Venmo/PayPal/CashApp links and track who's paid
-- **🔒 Configurable Lock Date** — picks lock at Round 1 by default; pool admins can set a custom lock when creating a pool (great for betas) and pull it earlier later — but never past the original, and never once it's passed
+- **🔒 Configurable Lock Date** — picks lock at Round 1 by default; pool admins can set a custom lock at creation and adjust it freely while picks are open (great for betas) — but once it passes, picks freeze and can't be reopened
 - **📱 Mobile Friendly** — works on your phone because that's where you'll be checking it every 5 minutes
 - **🛡️ Security** — bcrypt passwords, JWT sessions, rate limiting, input validation
 - **♿ Accessible** — focus-visible styles, reduced-motion support

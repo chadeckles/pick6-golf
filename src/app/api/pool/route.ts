@@ -340,24 +340,23 @@ export async function PATCH(req: NextRequest) {
       }
       const newLock = parsed.toISOString();
 
-      // Tamper guards:
-      //  1. Once the original lock has passed, no further changes — the pool is
-      //     live and moving the lock would let the admin (or anyone with admin's
-      //     session) replay picks against known live scores.
-      //  2. The new lock must not be AFTER the original. Admins can pull in a
-      //     lock (e.g. discover picks need to close earlier) but never push it out.
+      // Integrity guard (the one that matters): picks can be rescheduled freely
+      // WHILE they're still open, but once they've locked they can never be
+      // reopened or moved. That freeze is what prevents anyone editing picks
+      // after live scores appear. The picks API enforces the same lock_date, so
+      // the two stay consistent.
       const now = Date.now();
-      const original = new Date(pool.original_lock_date ?? pool.lock_date).getTime();
-      if (now >= original) {
+      const currentLock = new Date(pool.lock_date).getTime();
+      if (now >= currentLock) {
         return NextResponse.json(
-          { error: "Lock date cannot be changed after the tournament has started." },
+          { error: "Picks are already locked, so the lock time can no longer be changed." },
           { status: 403 }
         );
       }
-      if (parsed.getTime() > original) {
+      if (parsed.getTime() <= now) {
         return NextResponse.json(
-          { error: "Lock date cannot be moved later than the original lock." },
-          { status: 403 }
+          { error: "Lock time must be in the future." },
+          { status: 400 }
         );
       }
 

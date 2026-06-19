@@ -435,7 +435,7 @@ future dispute. Point them at the audit log entry and move on.
 
 ### "Can you move / reopen the pick lock?" (admin pool config)
 
-Yes — but only *before* it passes. The pick lock is **per pool**:
+Yes — freely, right up until it passes. The pick lock is **per pool**:
 
 - **Default:** the selected tournament's first round (8:00 AM, server-local
   time), derived per tournament — a US Open pool gets a June lock, not April.
@@ -445,12 +445,12 @@ Yes — but only *before* it passes. The pick lock is **per pool**:
   prefilled with that default. Change it to run a beta or close entries early.
 - **Edit later:** Dashboard → select the pool → **Lock: … → Edit**.
 
-Two server-enforced rules ([`pool/route.ts`](src/app/api/pool/route.ts) PATCH):
-
-1. You can only pull a lock **earlier**, never push it **later** than the
-   original `original_lock_date`.
-2. Once the original lock has passed, it's **frozen** — no further changes. This
-   is what backs the "can't fix my picks" answer above.
+The one server-enforced rule ([`pool/route.ts`](src/app/api/pool/route.ts)
+PATCH): **while picks are open you can move the lock to any future time —
+earlier or later; once it passes it's frozen and picks can't be reopened.** That
+freeze is what backs the "can't fix my picks" answer above (and the picks API
+enforces the same `lock_date`, so they never disagree). If a save is rejected,
+the dashboard now shows the reason inline instead of silently snapping back.
 
 **Time zones:** the field shows and accepts **your browser's local time**. It's
 stored as a UTC instant, so each member sees the lock in *their own* zone — set
@@ -498,7 +498,7 @@ Quick reference of what's enforced, so you can answer users with confidence.
 | **CSRF protected** — every mutating route checks `Origin`/`Referer` against `APP_URL` | `src/lib/security.ts` → `checkOrigin` |
 | **Rate-limited** — per-IP AND per-email for logins | `src/lib/rateLimit.ts` |
 | **Tier validation server-side** — a user can't submit a Tier 4 player as Tier 1, or an unknown golfer | `src/app/api/picks/route.ts` + `src/lib/tiers.ts` |
-| **Lock date cannot be pushed forward** — admins can pull in a lock, never extend it past the original | `src/app/api/pool/route.ts` (PATCH handler) |
+| **Picks can't be reopened once locked** — the lock is freely adjustable while picks are open, but frozen the moment it passes | `src/app/api/pool/route.ts` (PATCH handler) |
 | **No member removal after lock** | `src/app/api/pool/member/route.ts` |
 | **Payment URLs allowlisted** — only https Venmo/PayPal/CashApp/Stripe/Zelle/Square | `src/lib/security.ts` → `validatePaymentUrl` |
 | **Password reset tokens** — SHA-256 hashed before storage, 1-hour TTL, single-use | `src/app/api/auth/forgot/route.ts`, `src/app/api/auth/reset/route.ts` |

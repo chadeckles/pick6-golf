@@ -53,6 +53,7 @@ export default function DashboardPage() {
   const [entryFee, setEntryFee] = useState("");
   const [editingLockDate, setEditingLockDate] = useState(false);
   const [lockDateInput, setLockDateInput] = useState("");
+  const [lockDateError, setLockDateError] = useState("");
   const [showCreateJoin, setShowCreateJoin] = useState(false);
   const [collapsedTournaments, setCollapsedTournaments] = useState<Set<string>>(
     new Set()
@@ -149,15 +150,22 @@ export default function DashboardPage() {
 
   async function saveLockDate() {
     try {
-      await fetch("/api/pool", {
+      const res = await fetch("/api/pool", {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ poolId: pool?.id, lockDate: new Date(lockDateInput).toISOString() }),
       });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        setLockDateError(data.error || "Couldn't update the lock time.");
+        return;
+      }
+      setLockDateError("");
       setEditingLockDate(false);
       fetchAll();
     } catch (err) {
       console.error("Failed to save lock date:", err);
+      setLockDateError("Couldn't update the lock time. Please try again.");
     }
   }
 
@@ -648,7 +656,10 @@ export default function DashboardPage() {
                         </p>
                         {user?.userId === pool.adminUserId && (
                           <button
-                            onClick={() => setEditingLockDate(true)}
+                            onClick={() => {
+                              setLockDateError("");
+                              setEditingLockDate(true);
+                            }}
                             className="text-xs text-t-primary hover:underline"
                           >
                             Edit
@@ -656,25 +667,33 @@ export default function DashboardPage() {
                         )}
                       </>
                     ) : (
-                      <div className="flex items-center gap-2">
-                        <input
-                          type="datetime-local"
-                          value={lockDateInput}
-                          onChange={(e) => setLockDateInput(e.target.value)}
-                          className="border border-gray-300 rounded px-2 py-1 text-xs"
-                        />
-                        <button
-                          onClick={saveLockDate}
-                          className="text-xs bg-t-primary text-white px-2 py-1 rounded font-bold"
-                        >
-                          Save
-                        </button>
-                        <button
-                          onClick={() => setEditingLockDate(false)}
-                          className="text-xs text-gray-500 hover:underline"
-                        >
-                          Cancel
-                        </button>
+                      <div className="flex flex-col gap-1">
+                        <div className="flex items-center gap-2">
+                          <input
+                            type="datetime-local"
+                            value={lockDateInput}
+                            onChange={(e) => setLockDateInput(e.target.value)}
+                            className="border border-gray-300 rounded px-2 py-1 text-xs"
+                          />
+                          <button
+                            onClick={saveLockDate}
+                            className="text-xs bg-t-primary text-white px-2 py-1 rounded font-bold"
+                          >
+                            Save
+                          </button>
+                          <button
+                            onClick={() => {
+                              setEditingLockDate(false);
+                              setLockDateError("");
+                            }}
+                            className="text-xs text-gray-500 hover:underline"
+                          >
+                            Cancel
+                          </button>
+                        </div>
+                        {lockDateError && (
+                          <p className="text-xs text-red-600">{lockDateError}</p>
+                        )}
                       </div>
                     )}
                   </div>
