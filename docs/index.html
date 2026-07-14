@@ -1,0 +1,283 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Pick Six Golf — A Full-Stack Portfolio Project</title>
+  <meta name="description" content="Pick Six Golf: a full-stack golf major pick'em pool app built with Next.js, React, and SQLite. A portfolio / learning project by Chad Eckles." />
+
+  <!-- Open Graph (nice preview when the link is shared) -->
+  <meta property="og:title" content="Pick Six Golf — Full-Stack Portfolio Project" />
+  <meta property="og:description" content="A golf major pick'em pool app built with Next.js 16, React 19, Tailwind v4, and SQLite. Live ESPN scoring, JWT auth, tiered drafting." />
+  <meta property="og:type" content="website" />
+
+  <style>
+    :root {
+      --green: #0b6b3a;
+      --green-dark: #084d2a;
+      --fairway: #14985f;
+      --sand: #e8dcc0;
+      --ink: #12261b;
+      --paper: #f7f6f1;
+      --card: #ffffff;
+      --muted: #5a6b60;
+      --accent: #f4b400;
+    }
+
+    * { box-sizing: border-box; }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      margin: 0;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      color: var(--ink);
+      background: var(--paper);
+      line-height: 1.6;
+    }
+
+    a { color: var(--green); }
+
+    .wrap { max-width: 960px; margin: 0 auto; padding: 0 20px; }
+
+    /* Hero */
+    header.hero {
+      background: linear-gradient(160deg, var(--green) 0%, var(--green-dark) 100%);
+      color: #fff;
+      text-align: center;
+      padding: 72px 20px 64px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    header.hero::after {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background-image: radial-gradient(circle at 20% 30%, rgba(255,255,255,.06) 0 2px, transparent 3px),
+                        radial-gradient(circle at 70% 60%, rgba(255,255,255,.05) 0 2px, transparent 3px);
+      background-size: 60px 60px;
+      pointer-events: none;
+    }
+
+    .badge {
+      display: inline-block;
+      background: rgba(255,255,255,.15);
+      border: 1px solid rgba(255,255,255,.35);
+      color: #fff;
+      padding: 6px 14px;
+      border-radius: 999px;
+      font-size: 13px;
+      font-weight: 600;
+      letter-spacing: .3px;
+      margin-bottom: 20px;
+    }
+
+    header.hero h1 {
+      font-size: clamp(2.2rem, 6vw, 3.6rem);
+      margin: 0 0 12px;
+      line-height: 1.05;
+    }
+
+    header.hero p.tagline {
+      font-size: clamp(1rem, 2.5vw, 1.3rem);
+      max-width: 620px;
+      margin: 0 auto 28px;
+      opacity: .95;
+    }
+
+    .cta-row {
+      display: flex;
+      gap: 12px;
+      justify-content: center;
+      flex-wrap: wrap;
+      position: relative;
+      z-index: 1;
+    }
+
+    .btn {
+      display: inline-block;
+      padding: 12px 22px;
+      border-radius: 10px;
+      font-weight: 700;
+      text-decoration: none;
+      transition: transform .12s ease, box-shadow .12s ease;
+    }
+    .btn:hover { transform: translateY(-2px); }
+
+    .btn-primary { background: var(--accent); color: #3a2c00; box-shadow: 0 6px 18px rgba(0,0,0,.2); }
+    .btn-ghost { background: rgba(255,255,255,.12); color: #fff; border: 1px solid rgba(255,255,255,.4); }
+
+    /* Sections */
+    section { padding: 56px 0; }
+    section h2 {
+      font-size: clamp(1.5rem, 4vw, 2rem);
+      margin: 0 0 8px;
+      color: var(--green-dark);
+    }
+    section .lead { color: var(--muted); margin: 0 0 32px; max-width: 640px; }
+
+    /* Cards grid */
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+      gap: 18px;
+    }
+    .card {
+      background: var(--card);
+      border: 1px solid #e6e3d8;
+      border-radius: 14px;
+      padding: 22px;
+      box-shadow: 0 2px 10px rgba(0,0,0,.03);
+    }
+    .card h3 { margin: 0 0 8px; font-size: 1.1rem; }
+    .card p { margin: 0; color: var(--muted); font-size: .95rem; }
+    .card .emoji { font-size: 1.6rem; display: block; margin-bottom: 10px; }
+
+    /* Stack chips */
+    .chips { display: flex; flex-wrap: wrap; gap: 10px; }
+    .chip {
+      background: #fff;
+      border: 1px solid #d9d5c6;
+      border-radius: 999px;
+      padding: 8px 16px;
+      font-weight: 600;
+      font-size: .9rem;
+      color: var(--green-dark);
+    }
+
+    /* How it works steps */
+    ol.steps { counter-reset: step; list-style: none; padding: 0; margin: 0; display: grid; gap: 14px; }
+    ol.steps li {
+      background: var(--card);
+      border: 1px solid #e6e3d8;
+      border-radius: 12px;
+      padding: 18px 18px 18px 64px;
+      position: relative;
+    }
+    ol.steps li::before {
+      counter-increment: step;
+      content: counter(step);
+      position: absolute;
+      left: 16px; top: 50%;
+      transform: translateY(-50%);
+      width: 34px; height: 34px;
+      background: var(--fairway);
+      color: #fff;
+      border-radius: 50%;
+      display: grid; place-items: center;
+      font-weight: 700;
+    }
+
+    /* Alt background band */
+    .band { background: var(--sand); }
+
+    /* Footer */
+    footer {
+      background: var(--green-dark);
+      color: rgba(255,255,255,.85);
+      text-align: center;
+      padding: 40px 20px;
+      font-size: .9rem;
+    }
+    footer a { color: #fff; }
+    footer .disclaimer { opacity: .6; font-size: .8rem; margin-top: 16px; }
+  </style>
+</head>
+<body>
+
+  <header class="hero">
+    <div class="wrap">
+      <span class="badge">⛳ Portfolio &amp; learning project</span>
+      <h1>🏌️ Pick Six Golf</h1>
+      <p class="tagline">A full-stack pick'em pool app for golf's four major championships. Draft 6 golfers across skill tiers, and your best 5 of 6 to-par scores decide the winner — with live scoring, no spreadsheets.</p>
+      <div class="cta-row">
+        <a class="btn btn-primary" href="https://github.com/chadeckles/pick6-golf" target="_blank" rel="noopener">View the code on GitHub →</a>
+        <a class="btn btn-ghost" href="#stack">See how it's built</a>
+      </div>
+    </div>
+  </header>
+
+  <section>
+    <div class="wrap">
+      <h2>What it is</h2>
+      <p class="lead">Pick Six Golf is a self-hosted web app for running major-championship pools with friends. I built it to sharpen my full-stack skills — real authentication, a live third-party data feed, and a scoring engine with actual edge cases. It's kept here as a code sample; it is not currently deployed to a live host.</p>
+      <div class="grid">
+        <div class="card"><span class="emoji">🎯</span><h3>Tiered drafting</h3><p>Pick 6 golfers across 4 tiers ranked by Official World Golf Rankings — 1-2-2-1 format.</p></div>
+        <div class="card"><span class="emoji">📡</span><h3>Live ESPN scoring</h3><p>Real-time leaderboard pulled from ESPN's public scoreboard API. No manual score entry.</p></div>
+        <div class="card"><span class="emoji">🧮</span><h3>Best 5 of 6</h3><p>Your worst golfer is dropped. Cut penalties, tiebreakers, and to-par math all handled server-side.</p></div>
+        <div class="card"><span class="emoji">🎨</span><h3>Dynamic theming</h3><p>Each tournament — Masters, PGA, US Open, The Open — gets its own palette and branding automatically.</p></div>
+        <div class="card"><span class="emoji">🔒</span><h3>Real auth &amp; security</h3><p>bcrypt password hashing, JWT sessions, rate limiting, CSRF origin checks, and input validation.</p></div>
+        <div class="card"><span class="emoji">💰</span><h3>Pool administration</h3><p>Invite codes, payment tracking, configurable pick-lock dates, and admin transfer.</p></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="band">
+    <div class="wrap">
+      <h2>How a pool works</h2>
+      <p class="lead">The whole experience in five steps.</p>
+      <ol class="steps">
+        <li><strong>Create a pool</strong> — you get an invite code to share.</li>
+        <li><strong>Friends join</strong> — they register and enter the code.</li>
+        <li><strong>Pick 6 golfers</strong> across 4 OWGR-ranked tiers before picks lock.</li>
+        <li><strong>Watch the live leaderboard</strong> — scoring updates automatically during the tournament.</li>
+        <li><strong>Best 5 of 6 wins</strong> — one built-in mulligan, because we all need one.</li>
+      </ol>
+    </div>
+  </section>
+
+  <section id="stack">
+    <div class="wrap">
+      <h2>How it's built</h2>
+      <p class="lead">A server-rendered full-stack app — chosen deliberately over a static site so I could work with a real database, sessions, and API routes.</p>
+      <div class="chips">
+        <span class="chip">Next.js 16 · App Router</span>
+        <span class="chip">React 19</span>
+        <span class="chip">Tailwind CSS v4</span>
+        <span class="chip">TypeScript</span>
+        <span class="chip">SQLite · better-sqlite3</span>
+        <span class="chip">JWT auth (jose)</span>
+        <span class="chip">bcrypt</span>
+        <span class="chip">ESPN public API</span>
+        <span class="chip">Node build scripts</span>
+      </div>
+    </div>
+  </section>
+
+  <section class="band">
+    <div class="wrap">
+      <h2>Engineering highlights</h2>
+      <p class="lead">The parts I'm proud of — the things that made it a genuine learning project rather than a tutorial clone.</p>
+      <div class="grid">
+        <div class="card"><h3>Locked tier snapshots</h3><p>Rankings are frozen the moment a tournament's field is built, so every member drafts from the exact same pool no matter when they pick.</p></div>
+        <div class="card"><h3>Data pipeline</h3><p>A YAML schedule and live OWGR data feed a set of Node scripts that generate immutable, version-controlled tier tables.</p></div>
+        <div class="card"><h3>Scoring engine</h3><p>To-par math, missed-cut penalties, "drop your worst" logic, and tiebreakers — all with server-side validation.</p></div>
+        <div class="card"><h3>Security-first API</h3><p>Every route guards against the usual suspects: hashed passwords, signed sessions, rate limits, and origin checks.</p></div>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <div class="wrap">
+      <h2>Run it yourself</h2>
+      <p class="lead">Clone it and you're on the tee box in about two minutes.</p>
+      <div class="card" style="font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size:.9rem; color:var(--ink); overflow-x:auto;">
+        git clone https://github.com/chadeckles/pick6-golf.git<br>
+        cd pick6-golf<br>
+        npm install<br>
+        npm run dev
+      </div>
+      <p style="margin-top:20px;"><a class="btn btn-primary" href="https://github.com/chadeckles/pick6-golf" target="_blank" rel="noopener">Read the full README on GitHub →</a></p>
+    </div>
+  </section>
+
+  <footer>
+    <div class="wrap">
+      <p>Built by <strong>Chad Eckles</strong> · MIT Licensed · <a href="https://github.com/chadeckles/pick6-golf" target="_blank" rel="noopener">Source on GitHub</a></p>
+      <p class="disclaimer">Not affiliated with Augusta National, the PGA of America, the USGA, or The R&amp;A. A personal project built for fun and learning. ⛳</p>
+    </div>
+  </footer>
+
+</body>
+</html>

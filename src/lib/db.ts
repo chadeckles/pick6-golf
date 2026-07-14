@@ -4,7 +4,7 @@ import fs from "fs";
 
 const DB_PATH = process.env.DATABASE_PATH || path.join(process.cwd(), "pick6-golf.db");
 
-// Ensure the directory exists (critical for Railway persistent volumes)
+// Ensure the directory exists (important when DATABASE_PATH points at a volume)
 const dbDir = path.dirname(DB_PATH);
 if (!fs.existsSync(dbDir)) {
   fs.mkdirSync(dbDir, { recursive: true });

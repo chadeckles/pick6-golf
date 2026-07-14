@@ -2,7 +2,7 @@
  * Simple in-memory rate limiter with per-key sliding windows.
  *
  * IMPORTANT: state is per-Node-process. That's acceptable for a small (<100
- * user) deployment behind a single Railway container. If you ever scale
+ * user) deployment behind a single container. If you ever scale
  * horizontally, swap this for Upstash Redis or Postgres-backed throttling.
  *
  * Use the tightest bucket that still works for humans:

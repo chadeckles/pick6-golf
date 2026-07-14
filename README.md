@@ -2,6 +2,15 @@
 
 > *"I'm not saying my golf game is bad, but if I grew tomatoes, they'd come up sliced."* — Lee Trevino
 
+> ### 📌 Project status: archived showcase
+>
+> This is a **personal portfolio project** I built to learn full-stack development
+> with the Next.js App Router, SQLite, and live third-party data. It is **no longer
+> deployed to a live host** — it's kept here as a reference and code sample.
+>
+> **Want to see it?** Run it locally in ~2 minutes with the [Quick Start](#-quick-start-local-development)
+> below, or read the [architecture overview](#️-tech-stack) to see how it's built.
+
 The ultimate pick'em pool app for **the biggest championships in golf**. Pick 6 golfers across 4 tiers, and your best 5 of 6 combined to-par scores determine the winner. Live scoring. Zero spreadsheets. Finally, a better way! ⛳
 
 ## 🌲 What Is This?
@@ -132,9 +141,9 @@ git add src/lib/<slug>Tiers.ts && git commit -m "Lock <slug> 2026 field" && git 
 > ⚠️ **First time building a given tournament?** It also needs a one-time
 > registration in `src/lib/tiers.ts` — `build-field` prints the exact snippet.
 > `masters`, `pga`, and `usopen` are done; The Open is pending. See
-> [ADMIN_GUIDE.md §3e](ADMIN_GUIDE.md).
+> [ADMIN_GUIDE.md](ADMIN_GUIDE.md).
 
-Railway redeploys. Pool members can now make picks for the tournament.
+Pool members can now make picks for the tournament.
 
 ### 📺 During the Tournament
 
@@ -152,80 +161,16 @@ npm run build-field -- <slug> --force
 
 Use sparingly. After picks open, regenerating shuffles every member's tier options — only do this if you understand the trade-off.
 
-## 🚂 Deploy on Railway (Recommended)
+## 🚂 Deploying It Yourself (Optional)
 
-This app uses SQLite, so it needs a **persistent filesystem** — that rules out serverless platforms like Vercel. [Railway](https://railway.app) is the easiest option.
+Because this app uses SQLite, it needs a host with a **persistent filesystem** —
+that rules out serverless platforms like Vercel. Any Node-friendly host with a
+persistent volume works (Fly.io, Render, a small VPS, or a Raspberry Pi on your
+home network). You'll need to set the [environment variables](#-environment-variables)
+below and point `DATABASE_PATH` at a directory that survives restarts.
 
-### Step 1: Connect Your Repo
-
-1. Sign up at [railway.app](https://railway.app) (free trial includes $5 credit — plenty for a pool)
-2. Click **"New Project"** → **"Deploy from GitHub Repo"**
-3. Select your `pick6-golf` repository
-4. Railway will immediately start building — let it run while you do the next steps
-
-### Step 2: Set Environment Variables
-
-Click into your service → **Variables** tab → add these **4 variables**:
-
-| Variable | Value | Why |
-|----------|-------|-----|
-| `JWT_SECRET` | *(see below)* | Signs auth tokens — keeps sessions secure |
-| `DATABASE_PATH` | `/data/pick6-golf.db` | Points to the persistent volume |
-| `NODE_ENV` | `production` | Enables production optimizations |
-| `PORT` | `3000` | Railway defaults to 8080, but Next.js listens on 3000 |
-
-**🔑 Generating your JWT_SECRET:**
-
-Run this in any terminal (VS Code, macOS Terminal, etc.):
-
-```bash
-node -e "console.log(require('crypto').randomBytes(48).toString('base64url'))"
-```
-
-Copy the output and paste it as the `JWT_SECRET` value. Use a **different** secret for production vs. local development.
-
-### Step 3: Add a Persistent Volume ⚠️ Critical
-
-Without a volume, your database (all users, pools, picks) gets **wiped on every redeploy**. This is the most important step.
-
-> ⚠️ Volumes are **NOT** in the service settings — they're added from the **project canvas**.
-
-1. Go back to the **main project view** (click your project name at the top)
-2. Click the **"+ New"** button on the canvas (or right-click on the canvas)
-3. Select **"Volume"**
-4. Set **Mount Path** to `/data`
-5. Click **"Attach volume to service"** → select `pick6-golf`
-6. Save — Railway will redeploy automatically
-
-### Step 4: Set Up Public Networking
-
-1. Click into your service → **Settings** tab
-2. Scroll to **Networking** → **Public Networking**
-3. Click **"Generate Domain"** — Railway gives you a free HTTPS URL like:
-   ```
-   pick6-golf-production.up.railway.app
-   ```
-4. ⚡ **Port:** Make sure the port is set to **3000** (or whatever you set in the `PORT` variable). Railway may default to 8080 — update it to match.
-
-That's your shareable link! Send it to your pool members.
-
-### Step 5 (Optional): Custom Domain
-
-If you own a domain (e.g., `picksixgolf.com`):
-
-1. In **Settings → Networking**, click **"Custom Domain"** and enter your domain
-2. Railway shows you **2 DNS records** to add (a CNAME and a TXT record)
-3. Go to your domain registrar (Namecheap, GoDaddy, etc.) → DNS settings → add both records
-4. Wait ~10 minutes for DNS propagation
-5. Done — your custom domain now points to your app with automatic HTTPS
-
-> 💡 Not required — the free `.up.railway.app` URL works perfectly for a pool with friends.
-
-### 🎬 You're Live!
-
-Once deployed, visit your Railway URL. The first person to **register and create a pool** becomes the admin. Share the **invite code** with friends and start picking golfers.
-
-> ☝️ **Remember:** The production database is separate from your local dev database. Everyone starts fresh on the live site.
+This repo is no longer wired to any specific host — deployment is left as an
+exercise for whoever forks it.
 
 ## 📁 Project Structure
 
@@ -234,8 +179,7 @@ tournaments.yaml              ← Edit this yearly (dates, ESPN IDs, courses)
 scripts/
 ├── sync-schedule.js          ← Converts tournaments.yaml → schedule.json (auto)
 ├── sync-owgr.js              ← Fetches live OWGR top 200 from ESPN → owgr.json
-├── build-field.js            ← Generates <slug>Tiers.ts from ESPN field + OWGR
-└── backup.js                 ← Manual DB backup (npm run backup)
+└── build-field.js            ← Generates <slug>Tiers.ts from ESPN field + OWGR
 src/
 ├── app/                      # Next.js App Router pages & API routes
 │   ├── api/                  # REST endpoints (auth, picks, pool, standings, leaderboard)
